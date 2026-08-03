@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JLPT N2 Kanji Master (Myanmar)</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>JLPT N2 Kanji Master</h1>
+        <p>Click each single kanji to study full compounds, readings, Myanmar meanings, and examples. Unlock the test after viewing all!</p>
+    </header>
+
+    <div class="progress-container">
+        <div class="progress-bar" id="progressBar"></div>
+    </div>
+
+    <div class="loading-state" id="loadingMessage">Loading 1000 kanji from Gemini API…</div>
+
+    <!-- Kanji Grid Header (Single Characters) -->
+    <div class="kanji-grid" id="kanjiGrid"></div>
+
+    <button class="btn" id="startTestBtn" style="opacity: 0.5; pointer-events: none;" onclick="startTest()">Take 10-Question Test</button>
+
+    <!-- Test Container -->
+    <div class="test-section" id="testSection">
+        <h3 id="questionTitle">Question 1/10</h3>
+        <p id="questionText" style="font-weight: 600; font-size: 1.1rem;"></p>
+        <div class="options-grid" id="optionsGrid"></div>
+    </div>
+
+    <!-- Results Container -->
+    <div id="resultsContainer" style="display: none;"></div>
+</div>
+
+<!-- Kanji Detail Modal -->
+<div class="modal" id="kanjiModal">
+    <div class="modal-content">
+        <span class="close-btn" onclick="closeModal()">&times;</span>
+        <div class="kanji-display-large" id="modalKanji"></div>
+        <div class="detail-row"><strong>Compound Word:</strong> <span id="modalCompound" style="color: var(--primary); font-size: 1.1rem; font-weight: bold;"></span></div>
+        <div class="detail-row"><strong>運読 (On'yomi):</strong> <span id="modalOn"></span></div>
+        <div class="detail-row"><strong>訓読 (Kun'yomi):</strong> <span id="modalKun"></span></div>
+        <div class="detail-row"><strong>Myanmar Meaning:</strong> <span id="modalMyanmar" style="color: var(--primary); font-weight: bold;"></span></div>
+        <div class="examples-list">
+            <strong>Usage Examples:</strong>
+            <ul id="modalExamples" style="margin: 5px 0 0 20px; padding: 0;"></ul>
+        </div>
+    </div>
+</div>
+
+<script src="kanjimaster.js"></script>
+<script src="config.js"></script>
+<script src="script.js"></script>
+</body>
+</html>
