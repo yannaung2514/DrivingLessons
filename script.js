@@ -81,6 +81,54 @@ let viewedKanji = new Set();
 let currentQuestionIndex = 0;
 let score = 0;
 let testQuestions = [];
+let learnedKanji = []; // Kanji answered correctly in the test (current session)
+let savedLearnedKanji = []; // Kanji saved in localStorage (persistent)
+
+// localStorage key for saved learned kanji
+const LEARNED_KANJI_STORAGE_KEY = 'learnkanji_learned';
+
+// Load saved learned kanji from localStorage
+function loadSavedLearnedKanji() {
+    try {
+        const stored = localStorage.getItem(LEARNED_KANJI_STORAGE_KEY);
+        if (stored) {
+            savedLearnedKanji = JSON.parse(stored);
+            console.log('Loaded', savedLearnedKanji.length, 'saved learned kanji from localStorage');
+        }
+    } catch (e) {
+        console.warn('Failed to load learned kanji from localStorage:', e.message);
+        savedLearnedKanji = [];
+    }
+}
+
+// Save learned kanji to localStorage
+function saveLearnedKanji() {
+    try {
+        // Merge current session learned kanji with saved ones (no duplicates)
+        for (const item of learnedKanji) {
+            if (!savedLearnedKanji.some(k => k.char === item.char)) {
+                savedLearnedKanji.push(item);
+            }
+        }
+        localStorage.setItem(LEARNED_KANJI_STORAGE_KEY, JSON.stringify(savedLearnedKanji));
+        console.log('Saved', savedLearnedKanji.length, 'learned kanji to localStorage');
+    } catch (e) {
+        console.warn('Failed to save learned kanji to localStorage:', e.message);
+    }
+}
+
+// Reset all saved learned kanji
+function resetLearnedKanji() {
+    savedLearnedKanji = [];
+    learnedKanji = [];
+    try {
+        localStorage.removeItem(LEARNED_KANJI_STORAGE_KEY);
+    } catch (e) {
+        console.warn('Failed to reset learned kanji:', e.message);
+    }
+    renderLearnedKanji();
+    console.log('Learned kanji reset');
+}
 
 const gridEl = document.getElementById('kanjiGrid');
 const progressBar = document.getElementById('progressBar');
@@ -146,15 +194,30 @@ async function fetchKanjiData() {
         return;
     }
 
-    // Step 2: Select random kanji from the CSV
-    const selectedKanji = [...csvKanji]
+    // Step 2: Select random kanji from the CSV, excluding already-learned kanji
+    const availableKanji = csvKanji.filter(k => !isKanjiLearned(k.char));
+    const selectedKanji = [...availableKanji]
         .sort(() => 0.5 - Math.random())
-        .slice(0, Math.min(apiConfig.kanjiCount, csvKanji.length));
+        .slice(0, Math.min(apiConfig.kanjiCount, availableKanji.length));
+
+    // If not enough unlearned kanji, fill with learned ones
+    if (selectedKanji.length < apiConfig.kanjiCount) {
+        const learnedChars = new Set(savedLearnedKanji.map(k => k.char));
+        const learnedRemaining = csvKanji.filter(k => learnedChars.has(k.char));
+        const fillCount = apiConfig.kanjiCount - selectedKanji.length;
+        const fillKanji = [...learnedRemaining]
+            .sort(() => 0.5 - Math.random())
+            .slice(0, fillCount);
+        selectedKanji.push(...fillKanji);
+    }
 
     const kanjiChars = selectedKanji.map(k => k.char).join(', ');
 
-    // Step 3: If no API key, use CSV data directly (without AI enrichment)
-    if (!apiConfig.apiKey) {
+    // Step 3: Check if any providers are configured for direct API calls or proxy usage
+    const useProxy = apiConfig.useProxy === true;
+    const proxyUrl = apiConfig.proxyUrl || '/api/generate';
+    const providers = (apiConfig.providers || []).filter(p => useProxy ? p.name : p.apiKey);
+    if (providers.length === 0) {
         kanjiData = selectedKanji.map(k => ({
             char: k.char,
             compound: '',
@@ -163,87 +226,166 @@ async function fetchKanjiData() {
             myanmar: k.english,
             ex: [],
         }));
-        loadingMessage.textContent = 'No API key — showing kanji from CSV without AI examples.';
+        loadingMessage.textContent = 'No API key configured — showing kanji from data without AI examples.';
         loadingMessage.style.color = '#e67e22';
         renderGrid();
         setTimeout(() => { loadingMessage.style.display = 'none'; }, 5000);
+        renderLearnedKanji();
         return;
     }
 
-    // Step 4: Send selected kanji to Gemini AI for enrichment
-    loadingMessage.textContent = `Generating data for ${selectedKanji.length} kanji from Gemini (${apiConfig.model})…`;
+    // Step 4: Try each provider in order (Gemini → OpenAI → DeepSeek)
+    const prompt = `For each of the following kanji characters: ${kanjiChars}, provide a JSON object with a "kanji" property containing an array of objects. Each object must include: "char" (the kanji character), "compounds" (an array of 3-5 common compound word objects, each with "word" (the compound word) and "hira" (full hiragana reading of the compound word)), "on" (on'yomi reading in katakana), "kun" (kun'yomi reading), "myanmar" (Myanmar/Burmese meaning written in Burmese script ONLY — never Korean, never Chinese, never English), and "ex" (array of 2 example objects). Each object in "ex" must have: "jp" (Japanese example sentence), "hira" (full hiragana reading of the sentence), and "meaning" (Myanmar/Burmese translation written in Burmese script ONLY — never Korean). Output only JSON without explanation.`;
 
-    try {
-        const prompt = `For each of the following kanji characters: ${kanjiChars}, provide a JSON object with a "kanji" property containing an array of objects. Each object must include: "char" (the kanji character), "compound" (a common compound word using that kanji), "on" (on'yomi reading in katakana), "kun" (kun'yomi reading), "myanmar" (Myanmar/Burmese meaning), and "ex" (array of 2 example objects). Each object in "ex" must have: "jp" (Japanese example sentence), "hira" (full hiragana reading of the sentence), and "meaning" (Myanmar/Burmese translation). Output only JSON without explanation.`;
+    let kanjiResult = null;
+    let lastError = null;
+    let usedProviderName = '';
 
-        let jsonText;
+    for (const provider of providers) {
+        loadingMessage.textContent = `Generating data for ${selectedKanji.length} kanji via ${provider.name} (${provider.model})…`;
 
-        // Retry loop for rate-limit (429) errors with exponential backoff
-        for (let attempt = 0; attempt <= apiConfig.maxRetries; attempt++) {
-            const response = await fetch(`${apiConfig.apiUrl}?key=${apiConfig.apiKey}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    contents: [{ parts: [{ text: prompt }] }],
-                    generationConfig: {
-                        temperature: 0.2,
-                        maxOutputTokens: 16384,
-                        candidateCount: 1,
-                        responseMimeType: 'application/json',
-                    },
-                }),
-            });
-
-            const responseText = await response.text();
-
-            if (response.status === 429 && attempt < apiConfig.maxRetries) {
-                const waitMs = Math.pow(2, attempt) * 1000;
-                loadingMessage.textContent = `Rate limited. Retrying in ${waitMs / 1000}s… (attempt ${attempt + 1}/${apiConfig.maxRetries})`;
-                await sleep(waitMs);
-                continue;
-            }
-
-            if (!response.ok) {
-                throw new Error(`Gemini API request failed (${response.status}): ${responseText}`);
-            }
-
-            const data = JSON.parse(responseText);
-            console.log('Gemini response', data);
-            jsonText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-            break;
-        }
-
-        if (!jsonText) {
-            throw new Error('Gemini API returned no usable response text.');
-        }
-
-        // Strip markdown code fences if present
-        jsonText = jsonText.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
-
-        let parsed;
         try {
-            parsed = JSON.parse(jsonText);
-        } catch (e) {
-            console.warn('JSON parse failed, attempting recovery...', e.message);
-            parsed = recoverTruncatedJSON(jsonText);
-            if (!parsed) throw e;
-            const recoveredCount = Array.isArray(parsed) ? parsed.length : (parsed.kanji || []).length;
-            console.log('Recovered partial JSON with', recoveredCount, 'kanji');
-        }
+            let jsonText = null;
 
-        kanjiData = Array.isArray(parsed) ? parsed : (parsed.kanji || parsed.data || []);
+            for (let attempt = 0; attempt <= apiConfig.maxRetries; attempt++) {
+                let response;
 
-        if (!Array.isArray(kanjiData)) {
-            throw new Error('Gemini API did not return a kanji array.');
+                if (useProxy) {
+                    response = await fetch(proxyUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            provider: provider.name,
+                            prompt,
+                        }),
+                    });
+                } else if (provider.name === 'gemini') {
+                    // Gemini API format
+                    response = await fetch(`${provider.apiUrl}?key=${provider.apiKey}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            contents: [{ parts: [{ text: prompt }] }],
+                            generationConfig: {
+                                temperature: 0.2,
+                                maxOutputTokens: 16384,
+                                candidateCount: 1,
+                                responseMimeType: 'application/json',
+                            },
+                        }),
+                    });
+                } else if (provider.name === 'openrouter') {
+                    // OpenRouter API format (chat completions with extra headers)
+                    response = await fetch(provider.apiUrl, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${provider.apiKey}`,
+                            'HTTP-Referer': window.location.origin || 'http://localhost',
+                            'X-Title': 'LearnKanji',
+                        },
+                        body: JSON.stringify({
+                            model: provider.model,
+                            messages: [{ role: 'user', content: prompt }],
+                            temperature: 0.2,
+                            max_tokens: 4096,
+                            response_format: { type: 'json_object' },
+                        }),
+                    });
+                } else {
+                    // OpenAI / DeepSeek API format (both use chat completions)
+                    response = await fetch(provider.apiUrl, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${provider.apiKey}`,
+                        },
+                        body: JSON.stringify({
+                            model: provider.model,
+                            messages: [{ role: 'user', content: prompt }],
+                            temperature: 0.2,
+                            max_tokens: 4096,
+                            response_format: { type: 'json_object' },
+                        }),
+                    });
+                }
+
+                const responseText = await response.text();
+
+                // Retry on rate limit (429)
+                if (response.status === 429 && attempt < apiConfig.maxRetries) {
+                    const waitMs = Math.pow(2, attempt) * 1000;
+                    loadingMessage.textContent = `${provider.name} rate limited. Retrying in ${waitMs / 1000}s…`;
+                    await sleep(waitMs);
+                    continue;
+                }
+
+                if (!response.ok) {
+                    throw new Error(`${provider.name} API failed (${response.status}): ${responseText.substring(0, 200)}`);
+                }
+
+                const data = JSON.parse(responseText);
+
+                // Extract text from response (different formats per provider)
+                if (provider.name === 'gemini') {
+                    jsonText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+                } else {
+                    // OpenAI / DeepSeek
+                    jsonText = data?.choices?.[0]?.message?.content;
+                }
+                break;
+            }
+
+            if (!jsonText) {
+                throw new Error(`${provider.name} returned no usable response text.`);
+            }
+
+            // Strip markdown code fences if present
+            jsonText = jsonText.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
+
+            let parsed;
+            try {
+                parsed = JSON.parse(jsonText);
+            } catch (e) {
+                console.warn(`${provider.name}: JSON parse failed, attempting recovery...`, e.message);
+                parsed = recoverTruncatedJSON(jsonText);
+                if (!parsed) throw e;
+            }
+
+            const resultArr = Array.isArray(parsed) ? parsed : (parsed.kanji || parsed.data || []);
+            if (!Array.isArray(resultArr) || resultArr.length === 0) {
+                throw new Error(`${provider.name} did not return a kanji array.`);
+            }
+
+            kanjiResult = resultArr;
+            usedProviderName = provider.name;
+            console.log(`Success with ${provider.name} — got ${resultArr.length} kanji`);
+            break; // Success — stop trying other providers
+
+        } catch (error) {
+            console.warn(`${provider.name} failed:`, error.message);
+            lastError = error;
+            // Continue to next provider
         }
+    }
+
+    if (kanjiResult && kanjiResult.length > 0) {
+        // Remove any Korean text the AI may have generated
+        kanjiResult = cleanAIResponse(kanjiResult);
 
         // Merge CSV data (on, kun, english) for any kanji the AI didn't enrich
         const csvMap = new Map(selectedKanji.map(k => [k.char, k]));
-        kanjiData = kanjiData.map(item => {
+        kanjiData = kanjiResult.map(item => {
             const csv = csvMap.get(item.char);
+            // Handle both new "compounds" array and old "compound" string
+            let compounds = item.compounds || [];
+            if ((!compounds || compounds.length === 0) && item.compound) {
+                compounds = [{ word: item.compound, hira: '' }];
+            }
             return {
                 char: item.char,
-                compound: item.compound || csv?.compound || '',
+                compounds: compounds,
+                compound: item.compound || (compounds[0]?.word || ''),
                 on: item.on || csv?.on || '',
                 kun: item.kun || csv?.kun || '',
                 myanmar: item.myanmar || csv?.english || '',
@@ -254,10 +396,10 @@ async function fetchKanjiData() {
         kanjiData = kanjiData.slice(0, apiConfig.kanjiCount);
         loadingMessage.style.display = 'none';
         renderGrid();
-    } catch (error) {
-        console.error('API error:', error);
-
-        // Fallback: use CSV data with English meanings (no AI enrichment)
+        renderLearnedKanji();
+    } else {
+        // All providers failed — fallback to CSV data
+        console.error('All AI providers failed. Last error:', lastError?.message);
         kanjiData = selectedKanji.map(k => ({
             char: k.char,
             compound: '',
@@ -266,13 +408,167 @@ async function fetchKanjiData() {
             myanmar: k.english,
             ex: [],
         }));
-        loadingMessage.textContent = `AI unavailable (${error.message}). Showing kanji from CSV without examples.`;
+        loadingMessage.textContent = `All AI providers unavailable. Showing kanji from data without examples.`;
         loadingMessage.style.color = '#e67e22';
 
         renderGrid();
-
         setTimeout(() => { loadingMessage.style.display = 'none'; }, 5000);
+        renderLearnedKanji();
     }
+}
+
+// Convert katakana to hiragana for furigana display
+function katakanaToHiragana(text) {
+    return text.replace(/[\u30a1-\u30f6]/g, ch =>
+        String.fromCharCode(ch.charCodeAt(0) - 0x60)
+    );
+}
+
+// Check if a string contains Korean characters
+function containsKorean(text) {
+    if (!text) return false;
+    for (const ch of text) {
+        const code = ch.charCodeAt(0);
+        // Hangul syllables, Jamo, and compatibility Jamo
+        if ((code >= 0xac00 && code <= 0xd7af) ||
+            (code >= 0x1100 && code <= 0x11ff) ||
+            (code >= 0x3130 && code <= 0x318f)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+// Clean AI response data: remove Korean text from Myanmar meanings and examples
+function cleanAIResponse(data) {
+    return data.map(item => {
+        // Clean Myanmar meaning
+        if (containsKorean(item.myanmar)) {
+            item.myanmar = '';
+        }
+
+        // Clean examples
+        if (Array.isArray(item.ex)) {
+            item.ex = item.ex.filter(ex => {
+                if (typeof ex === 'object' && ex !== null) {
+                    return !containsKorean(ex.meaning) && !containsKorean(ex.jp);
+                }
+                return !containsKorean(ex);
+            });
+        }
+
+        return item;
+    });
+}
+
+// Escape HTML special characters for safe innerHTML
+// Using String.fromCharCode to prevent auto-formatter from converting entities
+function escapeHTML(text) {
+    const amp = '&' + 'amp;';
+    const lt = '&' + 'lt;';
+    const gt = '&' + 'gt;';
+    const quot = '&' + 'quot;';
+    const apos = '&#' + '039;';
+    return text
+        .replace(/&/g, amp)
+        .replace(/</g, lt)
+        .replace(/>/g, gt)
+        .replace(/"/g, quot)
+        .replace(/'/g, apos);
+}
+
+// Build furigana HTML: hiragana on top of kanji using <ruby> elements
+function buildFuriganaHTML(jp, hira) {
+    if (!hira) return escapeHTML(jp);
+
+    let html = '';
+    let hiraPos = 0;
+    let jpPos = 0;
+
+    while (jpPos < jp.length) {
+        const ch = jp[jpPos];
+        const code = ch.charCodeAt(0);
+        const isKanji = (code >= 0x4e00 && code <= 0x9fff) || (code >= 0x3400 && code <= 0x4dbf);
+
+        if (isKanji) {
+            // Collect consecutive kanji characters
+            let kanjiGroup = '';
+            while (jpPos < jp.length) {
+                const c = jp[jpPos];
+                const cCode = c.charCodeAt(0);
+                const cIsKanji = (cCode >= 0x4e00 && cCode <= 0x9fff) || (cCode >= 0x3400 && cCode <= 0x4dbf);
+                if (!cIsKanji) break;
+                kanjiGroup += c;
+                jpPos++;
+            }
+
+            // Find the hiragana reading for this kanji group
+            let reading = '';
+            while (hiraPos < hira.length) {
+                const nextJp = jp[jpPos]; // next non-kanji char in jp
+                const hCh = hira[hiraPos];
+
+                // Stop if the next jp char matches the current hira char
+                if (nextJp && hCh === nextJp) {
+                    break;
+                }
+
+                reading += hCh;
+                hiraPos++;
+            }
+
+            if (reading) {
+                html += `<ruby>${escapeHTML(kanjiGroup)}<rt>${escapeHTML(reading)}</rt></ruby>`;
+            } else {
+                html += escapeHTML(kanjiGroup);
+            }
+        } else {
+            // Non-kanji character
+            html += escapeHTML(ch);
+
+            if (hiraPos < hira.length) {
+                const hCh = hira[hiraPos];
+                const jpNorm = katakanaToHiragana(ch);
+
+                if (hCh === jpNorm) {
+                    // Direct match — advance
+                    hiraPos++;
+                } else {
+                    // No direct match — this could be a number (e.g. 3 → みっつ)
+                    // whose reading is in the hiragana string but not in the
+                    // Japanese sentence. Look ahead in the hiragana string to
+                    // find where the next kana character's reading begins.
+                    const nextJp = jp[jpPos + 1];
+                    if (nextJp) {
+                        const nextCode = nextJp.charCodeAt(0);
+                        const isNextKana = (nextCode >= 0x3040 && nextCode <= 0x30ff);
+                        if (isNextKana) {
+                            const nextJpNorm = katakanaToHiragana(nextJp);
+                            while (hiraPos < hira.length && hira[hiraPos] !== nextJpNorm) {
+                                hiraPos++;
+                            }
+                        }
+                    }
+                }
+            }
+            jpPos++;
+        }
+    }
+
+    return html;
+}
+
+// Get a hiragana reading for a kanji item (prefer kun, fall back to on converted to hiragana)
+function getHiraganaReading(item) {
+    if (item.kun && item.kun !== '-' && item.kun.trim()) {
+        // Clean up kun reading: remove dots, take first reading
+        return item.kun.split(/[.、\s]/)[0];
+    }
+    if (item.on && item.on.trim()) {
+        // Convert katakana on'yomi to hiragana
+        return katakanaToHiragana(item.on.split(/[.、\s]/)[0]);
+    }
+    return '';
 }
 
 function renderGrid() {
@@ -280,7 +576,22 @@ function renderGrid() {
     kanjiData.forEach((item, index) => {
         const card = document.createElement('div');
         card.className = `kanji-card ${viewedKanji.has(index) ? 'viewed' : ''}`;
-        card.innerText = item.char; // Displays only ONE base character
+
+        // Furigana (hiragana reading) on top of the kanji
+        const reading = getHiraganaReading(item);
+        if (reading) {
+            const furigana = document.createElement('span');
+            furigana.className = 'furigana';
+            furigana.innerText = reading;
+            card.appendChild(furigana);
+        }
+
+        // Kanji character
+        const kanjiChar = document.createElement('span');
+        kanjiChar.className = 'kanji-char';
+        kanjiChar.innerText = item.char;
+        card.appendChild(kanjiChar);
+
         card.onclick = () => openModal(index);
         gridEl.appendChild(card);
     });
@@ -301,7 +612,20 @@ const modal = document.getElementById('kanjiModal');
 function openModal(index) {
     const item = kanjiData[index];
     document.getElementById('modalKanji').innerText = item.char;
-    document.getElementById('modalCompound').innerText = item.compound || '—';
+
+    // Display compound words with furigana (hiragana on top of kanji)
+    const compoundEl = document.getElementById('modalCompound');
+    const compounds = item.compounds || [];
+    if (compounds.length > 0) {
+        compoundEl.innerHTML = compounds.map(c =>
+            buildFuriganaHTML(c.word || '', c.hira || '')
+        ).join('、');
+    } else if (item.compound) {
+        compoundEl.innerText = item.compound;
+    } else {
+        compoundEl.innerText = '—';
+    }
+
     document.getElementById('modalOn').innerText = item.on || '—';
     document.getElementById('modalKun').innerText = item.kun || '—';
     document.getElementById('modalMyanmar').innerText = item.myanmar || '—';
@@ -309,32 +633,32 @@ function openModal(index) {
     const exList = document.getElementById('modalExamples');
     exList.innerHTML = '';
 
-    // Displays hiragana readings alongside each usage example.
+    // Displays usage examples with furigana (hiragana on top of kanji via <ruby>).
     (item.ex || []).forEach(ex => {
         const li = document.createElement('li');
         li.style.marginBottom = '8px';
+        li.style.lineHeight = '1.8';
 
         if (typeof ex === 'object' && ex !== null) {
             const jp = ex.jp || '';
-            const hira = ex.hira ? `（${ex.hira}）` : '';
-            const meaning = ex.meaning ? ` — ${ex.meaning}` : '';
+            const hira = ex.hira || '';
+            const meaning = ex.meaning || '';
 
+            // Japanese sentence with ruby furigana (hiragana on top of kanji)
             const jpSpan = document.createElement('span');
-            jpSpan.innerText = jp;
             jpSpan.style.fontWeight = '600';
+            jpSpan.innerHTML = buildFuriganaHTML(jp, hira);
 
-            const hiraSpan = document.createElement('span');
-            hiraSpan.innerText = hira;
-            hiraSpan.style.color = '#6b7280';
-            hiraSpan.style.fontSize = '0.9em';
-
-            const meaningSpan = document.createElement('span');
-            meaningSpan.innerText = meaning;
-            meaningSpan.style.color = 'var(--primary)';
-
-            li.appendChild(jpSpan);
-            li.appendChild(hiraSpan);
-            li.appendChild(meaningSpan);
+            // Myanmar meaning
+            if (meaning) {
+                const meaningSpan = document.createElement('span');
+                meaningSpan.innerText = ` — ${meaning}`;
+                meaningSpan.style.color = 'var(--primary)';
+                li.appendChild(jpSpan);
+                li.appendChild(meaningSpan);
+            } else {
+                li.appendChild(jpSpan);
+            }
         } else {
             li.innerText = ex;
         }
@@ -368,6 +692,7 @@ function startTest() {
     testQuestions = [...kanjiData].sort(() => 0.5 - Math.random()).slice(0, 10);
     currentQuestionIndex = 0;
     score = 0;
+    learnedKanji = [];
     loadQuestion();
 }
 
@@ -402,9 +727,21 @@ function loadQuestion() {
 }
 
 function selectAnswer(selected, correct) {
-    if (selected === correct) score++;
+    if (selected === correct) {
+        score++;
+        // Track the correctly answered kanji for the learned group
+        const q = testQuestions[currentQuestionIndex];
+        if (q && !learnedKanji.some(k => k.char === q.char)) {
+            learnedKanji.push(q);
+        }
+    }
     currentQuestionIndex++;
     loadQuestion();
+}
+
+// Check if a kanji char is already in the saved learned list
+function isKanjiLearned(char) {
+    return savedLearnedKanji.some(k => k.char === char);
 }
 
 function showTestResults() {
@@ -430,6 +767,60 @@ function showTestResults() {
         </div>
         <button class="btn" style="margin-top: 15px;" onclick="location.reload()">Restart Learning Session</button>
     `;
+
+    // Save learned kanji to localStorage and show them
+    saveLearnedKanji();
+    renderLearnedKanji();
 }
 
+// Display all learned kanji (saved + current session) in the "learned" group at the bottom
+function renderLearnedKanji() {
+    const learnedSection = document.getElementById('learnedSection');
+    const learnedGrid = document.getElementById('learnedGrid');
+    const learnedCount = document.getElementById('learnedCount');
+
+    // Merge saved and current session learned kanji (no duplicates)
+    const allLearned = [...savedLearnedKanji];
+    for (const item of learnedKanji) {
+        if (!allLearned.some(k => k.char === item.char)) {
+            allLearned.push(item);
+        }
+    }
+
+    if (allLearned.length === 0) {
+        learnedSection.style.display = 'none';
+        return;
+    }
+
+    learnedSection.style.display = 'block';
+    if (learnedCount) {
+        learnedCount.innerText = allLearned.length;
+    }
+    learnedGrid.innerHTML = '';
+
+    allLearned.forEach(item => {
+        const card = document.createElement('div');
+        card.className = 'kanji-card learned';
+
+        // Furigana (hiragana reading) on top of the kanji
+        const reading = getHiraganaReading(item);
+        if (reading) {
+            const furigana = document.createElement('span');
+            furigana.className = 'furigana';
+            furigana.innerText = reading;
+            card.appendChild(furigana);
+        }
+
+        // Kanji character
+        const kanjiChar = document.createElement('span');
+        kanjiChar.className = 'kanji-char';
+        kanjiChar.innerText = item.char;
+        card.appendChild(kanjiChar);
+
+        learnedGrid.appendChild(card);
+    });
+}
+
+// Load saved learned kanji on startup, then fetch kanji data
+loadSavedLearnedKanji();
 fetchKanjiData();

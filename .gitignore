@@ -1,5 +1,15 @@
 # API keys and secrets
 config.js
+server-config.js
+
+# Large kanji JSON source files (converted to kanjidata.js)
+kanji.json
+kanji-jouyou.json
+kanji-kyouiku.json
+kanji-wanikani.json
+kanjimaster.json
+kanjimaster.csv
+kanjimaster.js
 
 # Node modules
 node_modules/

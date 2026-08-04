@@ -34,6 +34,16 @@
 
     <!-- Results Container -->
     <div id="resultsContainer" style="display: none;"></div>
+
+    <!-- Learned Kanji Section (bottom of page) -->
+    <div id="learnedSection" style="display: none; margin-top: 30px; border-top: 2px solid #e5e7eb; padding-top: 20px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+            <h3 style="color: var(--success); margin: 0;">✅ Learned Kanji (<span id="learnedCount">0</span>)</h3>
+            <button class="btn" style="width: auto; padding: 6px 14px; font-size: 0.85rem; background: #ef4444;" onclick="resetLearnedKanji()">Reset</button>
+        </div>
+        <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 15px;">Kanji you answered correctly in tests. Saved in your browser until you reset.</p>
+        <div class="kanji-grid" id="learnedGrid"></div>
+    </div>
 </div>
 
 <!-- Kanji Detail Modal -->
@@ -41,7 +51,7 @@
     <div class="modal-content">
         <span class="close-btn" onclick="closeModal()">&times;</span>
         <div class="kanji-display-large" id="modalKanji"></div>
-        <div class="detail-row"><strong>Compound Word:</strong> <span id="modalCompound" style="color: var(--primary); font-size: 1.1rem; font-weight: bold;"></span></div>
+        <div class="detail-row"><strong>Compound Words:</strong> <span id="modalCompound" style="color: var(--primary); font-size: 1.1rem; font-weight: bold; line-height: 2.2;"></span></div>
         <div class="detail-row"><strong>運読 (On'yomi):</strong> <span id="modalOn"></span></div>
         <div class="detail-row"><strong>訓読 (Kun'yomi):</strong> <span id="modalKun"></span></div>
         <div class="detail-row"><strong>Myanmar Meaning:</strong> <span id="modalMyanmar" style="color: var(--primary); font-weight: bold;"></span></div>
@@ -52,7 +62,7 @@
     </div>
 </div>
 
-<script src="kanjimaster.js"></script>
+<script src="kanjidata.js"></script>
 <script src="config.js"></script>
 <script src="script.js"></script>
 </body>

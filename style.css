@@ -74,12 +74,26 @@ header p {
     border-radius: 12px;
     height: 70px;
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
-    font-size: 1.8rem;
     cursor: pointer;
     transition: all 0.2s ease;
     user-select: none;
+    padding: 4px;
+}
+
+.kanji-card .furigana {
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    line-height: 1.1;
+    margin-bottom: 2px;
+    min-height: 0.7rem;
+}
+
+.kanji-card .kanji-char {
+    font-size: 1.8rem;
+    line-height: 1.2;
 }
 
 .kanji-card:hover {
@@ -91,6 +105,19 @@ header p {
     background-color: #ecfdf5;
     border-color: var(--success);
     color: #065f46;
+}
+
+/* Learned kanji cards (answered correctly in test) */
+.kanji-card.learned {
+    background-color: #ecfdf5;
+    border-color: var(--success);
+    color: #065f46;
+    cursor: default;
+}
+
+.kanji-card.learned:hover {
+    transform: none;
+    border-color: var(--success);
 }
 
 /* Modal / Detail View */
@@ -138,12 +165,34 @@ header p {
     color: var(--text-main);
 }
 
+/* Furigana (ruby) in compound words — hiragana on top of kanji */
+#modalCompound ruby {
+    ruby-position: over;
+}
+
+#modalCompound ruby rt {
+    font-size: 0.5em;
+    color: var(--text-muted);
+    font-weight: normal;
+}
+
 .examples-list {
     background: #f3f4f6;
     padding: 10px 15px;
     border-radius: 8px;
     margin-top: 10px;
     font-size: 0.9rem;
+}
+
+/* Furigana (ruby) in usage examples — hiragana on top of kanji */
+.examples-list ruby {
+    ruby-position: over;
+}
+
+.examples-list ruby rt {
+    font-size: 0.55em;
+    color: var(--text-muted);
+    font-weight: normal;
 }
 
 /* Test Section */
