@@ -204,9 +204,28 @@ function recoverTruncatedJSON(text) {
     }
 }
 
+function buildKanjiDataFromCSV(selectedKanji) {
+    return selectedKanji.map(k => {
+        // Use compound words from kanjidata.js (added via translate/add_compounds.mjs)
+        const compounds = Array.isArray(k.compounds) && k.compounds.length > 0
+            ? k.compounds
+            : [];
+        return {
+            char: k.char,
+            compound: compounds[0]?.word || '',
+            compounds: compounds,
+            on: k.on || '',
+            kun: k.kun || '',
+            myanmar: k.myanmar || k.english || '',
+            ex: [],
+        };
+    });
+}
+
 async function fetchKanjiData() {
     loadingMessage.style.display = 'block';
-    loadingMessage.textContent = 'Loading kanji from kanjidata.js…';
+    loadingMessage.textContent = 'Loading kanji from local data…';
+    loadingMessage.style.color = '#333';
 
     // Step 1: Use local kanji data from kanjidata.js.
     const csvKanji = await loadLocalKanjiData();
@@ -238,26 +257,19 @@ async function fetchKanjiData() {
         selectedKanji.push(...fillKanji);
     }
 
-    const kanjiChars = selectedKanji.map(k => k.char).join(', ');
+    // Render immediately using local data while API enrichment runs in the background.
+    kanjiData = buildKanjiDataFromCSV(selectedKanji);
+    renderGrid();
+    renderLearnedKanji();
 
-    // Step 3: Check if any providers are configured for direct API calls or proxy usage
+    const kanjiChars = selectedKanji.map(k => k.char).join(', ');
     const useProxy = apiConfig.useProxy === true;
     const proxyUrl = apiConfig.proxyUrl || '/api/generate';
     const providers = (apiConfig.providers || []).filter(p => useProxy ? p.name : p.apiKey);
     if (providers.length === 0) {
-        kanjiData = selectedKanji.map(k => ({
-            char: k.char,
-            compound: '',
-            on: k.on,
-            kun: k.kun,
-            myanmar: k.english,
-            ex: [],
-        }));
         loadingMessage.textContent = 'No API key configured — showing kanji from data without AI examples.';
         loadingMessage.style.color = '#e67e22';
-        renderGrid();
         setTimeout(() => { loadingMessage.style.display = 'none'; }, 5000);
-        renderLearnedKanji();
         return;
     }
 
@@ -397,17 +409,18 @@ async function fetchKanjiData() {
     }
 
     if (kanjiResult && kanjiResult.length > 0) {
-        // Remove any Korean text the AI may have generated
         kanjiResult = cleanAIResponse(kanjiResult);
 
-        // Merge CSV data (on, kun, english) for any kanji the AI didn't enrich
         const csvMap = new Map(selectedKanji.map(k => [k.char, k]));
         kanjiData = kanjiResult.map(item => {
             const csv = csvMap.get(item.char);
-            // Handle both new "compounds" array and old "compound" string
+            // Use AI compounds if provided; otherwise fall back to local compounds from kanjidata.js
             let compounds = item.compounds || [];
             if ((!compounds || compounds.length === 0) && item.compound) {
                 compounds = [{ word: item.compound, hira: '' }];
+            }
+            if ((!compounds || compounds.length === 0) && csv?.compounds && csv.compounds.length > 0) {
+                compounds = csv.compounds;
             }
             return {
                 char: item.char,
@@ -415,7 +428,8 @@ async function fetchKanjiData() {
                 compound: item.compound || (compounds[0]?.word || ''),
                 on: item.on || csv?.on || '',
                 kun: item.kun || csv?.kun || '',
-                myanmar: item.myanmar || csv?.english || '',
+                // Use AI Myanmar if provided; otherwise fall back to local Myanmar from kanjidata.js
+                myanmar: item.myanmar || csv?.myanmar || csv?.english || '',
                 ex: item.ex || [],
             };
         });
@@ -425,22 +439,14 @@ async function fetchKanjiData() {
         renderGrid();
         renderLearnedKanji();
     } else {
-        // All providers failed — fallback to CSV data
+        // All AI providers failed — kanjiData already contains local data with compounds
+        // and Myanmar meanings from buildKanjiDataFromCSV (set before the API call).
         console.error('All AI providers failed. Last error:', lastError?.message);
-        kanjiData = selectedKanji.map(k => ({
-            char: k.char,
-            compound: '',
-            on: k.on,
-            kun: k.kun,
-            myanmar: k.english,
-            ex: [],
-        }));
-        loadingMessage.textContent = `All AI providers unavailable. Showing kanji from data without examples.`;
+        loadingMessage.textContent = `All AI providers unavailable. Showing kanji with compounds and meanings from local data.`;
         loadingMessage.style.color = '#e67e22';
-
         renderGrid();
-        setTimeout(() => { loadingMessage.style.display = 'none'; }, 5000);
         renderLearnedKanji();
+        setTimeout(() => { loadingMessage.style.display = 'none'; }, 5000);
     }
 }
 
