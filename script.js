@@ -24,6 +24,77 @@ const apiConfig = window.apiConfig || {
     ],
 };
 
+// ===== Supabase Integration =====
+// Fetch kanji data from Supabase via the Vercel serverless function (api/supabase.js)
+async function fetchKanjiFromSupabase(limit = 100) {
+    try {
+        const response = await fetch(`/api/supabase?limit=${limit}`, { method: 'GET' });
+        if (!response.ok) return null;
+        const data = await response.json();
+        if (!Array.isArray(data) || data.length === 0) return null;
+        // Map Supabase rows to the app's kanjiData format
+        return data.map(row => ({
+            char: row.char,
+            compound: (row.compounds && row.compounds[0]?.word) || '',
+            compounds: row.compounds || [],
+            on: row.on_yomi || '',
+            kun: row.kun_yomi || '',
+            myanmar: row.myanmar || row.english || '',
+            english: row.english || '',
+            ex: row.examples || [],
+            notes: row.notes || null,
+        }));
+    } catch (e) {
+        console.warn('Supabase read failed (will use local data):', e.message);
+        return null;
+    }
+}
+
+// Save AI-enriched kanji data back to Supabase (overrides original data)
+async function saveKanjiToSupabase(kanjiItems) {
+    try {
+        const response = await fetch('/api/supabase', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(kanjiItems.map(k => ({
+                char: k.char,
+                on_yomi: k.on || '',
+                kun_yomi: k.kun || '',
+                english: k.english || '',
+                myanmar: k.myanmar || '',
+                compounds: k.compounds || [],
+                examples: k.ex || [],
+            }))),
+        });
+        if (!response.ok) {
+            throw new Error(`Supabase save failed: ${response.status}`);
+        }
+        console.log('Saved AI data to Supabase');
+        return true;
+    } catch (e) {
+        console.warn('Supabase save failed:', e.message);
+        return false;
+    }
+}
+
+// Update a single kanji in Supabase (used for edits and notes)
+async function updateKanjiInSupabase(char, updates) {
+    try {
+        const response = await fetch(`/api/supabase?char=${encodeURIComponent(char)}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(updates),
+        });
+        if (!response.ok) {
+            throw new Error(`Supabase update failed: ${response.status}`);
+        }
+        return true;
+    } catch (e) {
+        console.warn('Supabase update failed:', e.message);
+        return false;
+    }
+}
+
 // Fallback kanji data — used when CSV or API is unavailable.
 const fallbackKanji = [
     {
@@ -225,11 +296,17 @@ function buildKanjiDataFromCSV(selectedKanji) {
 
 async function fetchKanjiData() {
     loadingMessage.style.display = 'block';
-    loadingMessage.textContent = 'Loading kanji from local data…';
+    loadingMessage.textContent = 'Loading kanji from Supabase…';
     loadingMessage.style.color = '#333';
 
-    // Step 1: Use local kanji data from kanjidata.js.
-    const csvKanji = await loadLocalKanjiData();
+    // Step 1: Try loading from Supabase first (has AI-overridden data).
+    let csvKanji = await fetchKanjiFromSupabase(2000);
+
+    if (!csvKanji || csvKanji.length === 0) {
+        // Step 1b: Fall back to local kanjidata.js if Supabase is unavailable/empty.
+        loadingMessage.textContent = 'Loading kanji from local data…';
+        csvKanji = await loadLocalKanjiData();
+    }
 
     if (!csvKanji || csvKanji.length === 0) {
         console.warn('Local kanji data not loaded — using fallback data.');
@@ -441,6 +518,9 @@ async function fetchKanjiData() {
         loadingMessage.style.display = 'none';
         renderGrid();
         renderLearnedKanji();
+
+        // Save AI-enriched data back to Supabase (overrides original data)
+        saveKanjiToSupabase(kanjiData);
     } else {
         // All AI providers failed — kanjiData already contains local data with compounds
         // and Myanmar meanings from buildKanjiDataFromCSV (set before the API call).
@@ -834,9 +914,17 @@ function saveEdit() {
     item.kun = edit.kun;
     item.myanmar = edit.myanmar;
 
+    // Save to Supabase (overrides original data)
+    updateKanjiInSupabase(item.char, {
+        on_yomi: edit.on,
+        kun_yomi: edit.kun,
+        myanmar: edit.myanmar,
+        compounds: edit.compounds,
+    });
+
     // Refresh the modal display
     openModal(currentModalIndex);
-    alert('✅ Saved! Your edit for "' + item.char + '" is stored in this browser.');
+    alert('✅ Saved! Your edit for "' + item.char + '" is stored in this browser and Supabase.');
 }
 
 // Cancel editing
@@ -875,6 +963,8 @@ function saveNote() {
         delete notes[item.char];
     }
     saveUserNotes(notes);
+    // Save note to Supabase
+    updateKanjiInSupabase(item.char, { notes: text || null });
     alert('✅ Note saved for "' + item.char + '"!');
     closeNotesPopup();
 }
@@ -887,6 +977,8 @@ function deleteNote() {
     const notes = loadUserNotes();
     delete notes[item.char];
     saveUserNotes(notes);
+    // Delete note from Supabase
+    updateKanjiInSupabase(item.char, { notes: null });
     document.getElementById('notesText').value = '';
     alert('🗑️ Note deleted for "' + item.char + '".');
     closeNotesPopup();
