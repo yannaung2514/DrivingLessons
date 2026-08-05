@@ -8,15 +8,17 @@ window.apiConfig = {
     kanjiCount: 10,
     maxRetries: 2, // Retries per provider before moving to the next
 
+    // On Vercel: useProxy true → api/generate.js reads GEMINI_API_KEY env var.
+    // Local dev: set useProxy false and add your key below (starts with "AIza...").
+    useProxy: true,
+    proxyUrl: '/api/generate',
+
     providers: [
         {
             name: 'gemini',
-            apiKey: '', // ← Add your Gemini API key here (starts with "AIza...")
+            apiKey: '', // ← Only needed when useProxy is false (local direct API)
             model: 'gemini-3.5-flash',
             apiUrl: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent',
         },
     ],
 };
-
-// Proxy server settings (set to true only if running server.js locally)
-window.apiConfig.useProxy = false;

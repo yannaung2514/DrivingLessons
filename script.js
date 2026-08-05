@@ -5,28 +5,24 @@
 // it overrides this default via window.apiConfig.
 let kanjiData = [];
 
-// Default AI configuration — Gemini direct API (browser call)
-// NOTE: No API key is hardcoded here (GitHub push protection blocks secrets).
-// To enable AI examples, create a local config.js with your key (see config.example.js),
-// or the app gracefully falls back to showing kanji from kanjidata.js without AI examples.
+// Default AI configuration — uses the Vercel serverless function (api/generate.js)
+// which reads GEMINI_API_KEY from Vercel environment variables (never exposed to the browser).
+// For local development, create a config.js with your key and useProxy: false (see config.example.js).
 const apiConfig = window.apiConfig || {
     kanjiCount: 10,
     maxRetries: 2, // Retries before giving up
+    useProxy: true, // Use Vercel serverless function (api/generate.js)
+    proxyUrl: '/api/generate',
 
     providers: [
         {
             name: 'gemini',
-            apiKey: '', // ← Add your Gemini API key here (starts with "AIza...")
+            apiKey: '', // Not needed when useProxy is true (key is on the server)
             model: 'gemini-3.5-flash',
             apiUrl: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent',
         },
     ],
 };
-
-// Proxy server settings (set to true only if running server.js locally)
-if (apiConfig.useProxy === undefined) {
-    apiConfig.useProxy = false;
-}
 
 // Fallback kanji data — used when CSV or API is unavailable.
 const fallbackKanji = [
