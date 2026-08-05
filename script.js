@@ -43,6 +43,7 @@ async function fetchKanjiFromSupabase(limit = 100) {
             english: row.english || '',
             ex: row.examples || [],
             notes: row.notes || null,
+            learned: row.learned === true,
         }));
     } catch (e) {
         console.warn('Supabase read failed (will use local data):', e.message);
@@ -51,30 +52,34 @@ async function fetchKanjiFromSupabase(limit = 100) {
 }
 
 // Save AI-enriched kanji data back to Supabase (overrides original data)
+// Uses PATCH per kanji to update existing rows (avoids 409 conflict on insert)
 async function saveKanjiToSupabase(kanjiItems) {
-    try {
-        const response = await fetch('/api/supabase', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(kanjiItems.map(k => ({
-                char: k.char,
-                on_yomi: k.on || '',
-                kun_yomi: k.kun || '',
-                english: k.english || '',
-                myanmar: k.myanmar || '',
-                compounds: k.compounds || [],
-                examples: k.ex || [],
-            }))),
-        });
-        if (!response.ok) {
-            throw new Error(`Supabase save failed: ${response.status}`);
+    let saved = 0;
+    for (const k of kanjiItems) {
+        try {
+            const response = await fetch(`/api/supabase?char=${encodeURIComponent(k.char)}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    on_yomi: k.on || '',
+                    kun_yomi: k.kun || '',
+                    english: k.english || '',
+                    myanmar: k.myanmar || '',
+                    compounds: k.compounds || [],
+                    examples: k.ex || [],
+                }),
+            });
+            if (response.ok) {
+                saved++;
+            } else {
+                console.warn(`Supabase save failed for ${k.char}: ${response.status}`);
+            }
+        } catch (e) {
+            console.warn(`Supabase save failed for ${k.char}:`, e.message);
         }
-        console.log('Saved AI data to Supabase');
-        return true;
-    } catch (e) {
-        console.warn('Supabase save failed:', e.message);
-        return false;
     }
+    console.log(`Saved ${saved}/${kanjiItems.length} kanji to Supabase`);
+    return saved > 0;
 }
 
 // Update a single kanji in Supabase (used for edits and notes)
@@ -92,6 +97,169 @@ async function updateKanjiInSupabase(char, updates) {
     } catch (e) {
         console.warn('Supabase update failed:', e.message);
         return false;
+    }
+}
+
+// Call AI to enrich a list of kanji (returns enriched data or null)
+async function callAIForKanji(kanjiList) {
+    const kanjiChars = kanjiList.map(k => k.char).join(', ');
+    const useProxy = apiConfig.useProxy === true;
+    const proxyUrl = apiConfig.proxyUrl || '/api/generate';
+    const providers = (apiConfig.providers || []).filter(p => useProxy ? p.name : p.apiKey);
+    if (providers.length === 0) return null;
+
+    const prompt = `For each of the following kanji characters: ${kanjiChars}, provide a JSON object with a "kanji" property containing an array of objects. Each object must include: "char" (the kanji character), "compounds" (an array of 3-5 common compound word objects, each with "word" (the compound word), "hira" (full hiragana reading of the compound word), and "meaning" (Myanmar/Burmese translation of the compound word written in Burmese script ONLY — never Korean, never Chinese, never English)), "on" (on'yomi reading in katakana), "kun" (kun'yomi reading), "myanmar" (Myanmar/Burmese meaning written in Burmese script ONLY — never Korean, never Chinese, never English), and "ex" (array of 2 example objects). Each object in "ex" must have: "jp" (Japanese example sentence), "hira" (full hiragana reading of the sentence), and "meaning" (Myanmar/Burmese translation written in Burmese script ONLY — never Korean). Output only JSON without explanation.`;
+
+    let kanjiResult = null;
+
+    for (const provider of providers) {
+        try {
+            let jsonText = null;
+            for (let attempt = 0; attempt <= apiConfig.maxRetries; attempt++) {
+                let response;
+                if (useProxy) {
+                    response = await fetch(proxyUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ provider: provider.name, prompt }),
+                    });
+                } else if (provider.name === 'gemini') {
+                    response = await fetch(`${provider.apiUrl}?key=${provider.apiKey}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            contents: [{ parts: [{ text: prompt }] }],
+                            generationConfig: {
+                                temperature: 0.2,
+                                maxOutputTokens: 16384,
+                                candidateCount: 1,
+                                responseMimeType: 'application/json',
+                            },
+                        }),
+                    });
+                } else if (provider.name === 'openrouter') {
+                    response = await fetch(provider.apiUrl, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${provider.apiKey}`,
+                            'HTTP-Referer': window.location.origin || 'http://localhost',
+                            'X-Title': 'LearnKanji',
+                        },
+                        body: JSON.stringify({
+                            model: provider.model,
+                            messages: [{ role: 'user', content: prompt }],
+                            temperature: 0.2,
+                            max_tokens: 4096,
+                            response_format: { type: 'json_object' },
+                        }),
+                    });
+                } else {
+                    response = await fetch(provider.apiUrl, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${provider.apiKey}`,
+                        },
+                        body: JSON.stringify({
+                            model: provider.model,
+                            messages: [{ role: 'user', content: prompt }],
+                            temperature: 0.2,
+                            max_tokens: 4096,
+                            response_format: { type: 'json_object' },
+                        }),
+                    });
+                }
+
+                const responseText = await response.text();
+                if (response.status === 429 && attempt < apiConfig.maxRetries) {
+                    const waitMs = Math.pow(2, attempt) * 1000;
+                    await sleep(waitMs);
+                    continue;
+                }
+                if (!response.ok) {
+                    throw new Error(`${provider.name} API failed (${response.status}): ${responseText.substring(0, 200)}`);
+                }
+                const data = JSON.parse(responseText);
+                if (provider.name === 'gemini') {
+                    jsonText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+                } else {
+                    jsonText = data?.choices?.[0]?.message?.content;
+                }
+                break;
+            }
+
+            if (!jsonText) throw new Error(`${provider.name} returned no usable response text.`);
+            jsonText = jsonText.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
+            let parsed;
+            try {
+                parsed = JSON.parse(jsonText);
+            } catch (e) {
+                parsed = recoverTruncatedJSON(jsonText);
+                if (!parsed) throw e;
+            }
+            const resultArr = Array.isArray(parsed) ? parsed : (parsed.kanji || parsed.data || []);
+            if (!Array.isArray(resultArr) || resultArr.length === 0) {
+                throw new Error(`${provider.name} did not return a kanji array.`);
+            }
+            kanjiResult = resultArr;
+            break;
+        } catch (error) {
+            console.warn(`${provider.name} failed:`, error.message);
+        }
+    }
+
+    if (!kanjiResult || kanjiResult.length === 0) return null;
+
+    kanjiResult = cleanAIResponse(kanjiResult);
+    const csvMap = new Map(kanjiList.map(k => [k.char, k]));
+    return kanjiResult.map(item => {
+        const csv = csvMap.get(item.char);
+        let compounds = item.compounds || [];
+        if ((!compounds || compounds.length === 0) && item.compound) {
+            compounds = [{ word: item.compound, hira: '' }];
+        }
+        if ((!compounds || compounds.length === 0) && csv?.compounds && csv.compounds.length > 0) {
+            compounds = csv.compounds;
+        }
+        return {
+            char: item.char,
+            compounds: compounds,
+            compound: item.compound || (compounds[0]?.word || ''),
+            on: item.on || csv?.on || '',
+            kun: item.kun || csv?.kun || '',
+            myanmar: item.myanmar || csv?.myanmar || csv?.english || '',
+            ex: item.ex || [],
+        };
+    });
+}
+
+// Preload the next batch of kanji with AI data in the background
+async function preloadNextBatch(currentChars) {
+    try {
+        let allKanji = await fetchKanjiFromSupabase(2000);
+        if (!allKanji || allKanji.length === 0) {
+            allKanji = await loadLocalKanjiData();
+        }
+        if (!allKanji || allKanji.length === 0) return;
+
+        const currentSet = new Set(currentChars);
+        const learnedSet = new Set(savedLearnedKanji.map(k => k.char));
+        const nextBatch = allKanji
+            .filter(k => !currentSet.has(k.char) && !learnedSet.has(k.char))
+            .sort(() => 0.5 - Math.random())
+            .slice(0, apiConfig.kanjiCount);
+
+        if (nextBatch.length === 0) return;
+
+        console.log(`Preloading next ${nextBatch.length} kanji with AI...`);
+        const enriched = await callAIForKanji(nextBatch);
+        if (enriched && enriched.length > 0) {
+            await saveKanjiToSupabase(enriched);
+            console.log(`Preloaded ${enriched.length} kanji to Supabase`);
+        }
+    } catch (e) {
+        console.warn('Preload failed:', e.message);
     }
 }
 
@@ -219,6 +387,10 @@ function resetLearnedKanji() {
     } catch (e) {
         console.warn('Failed to reset learned kanji:', e.message);
     }
+    // Reset learned status in Supabase for all kanji in current data
+    for (const item of kanjiData) {
+        updateKanjiInSupabase(item.char, { learned: false });
+    }
     renderLearnedKanji();
     console.log('Learned kanji reset');
 }
@@ -289,7 +461,7 @@ function buildKanjiDataFromCSV(selectedKanji) {
             on: k.on || '',
             kun: k.kun || '',
             myanmar: k.myanmar || k.english || '',
-            ex: [],
+            ex: Array.isArray(k.ex) ? k.ex : [],
         };
     });
 }
@@ -354,7 +526,7 @@ async function fetchKanjiData() {
     }
 
     // Step 4: Try each provider in order (Gemini → OpenAI → OpenRouter → DeepSeek)
-    const prompt = `For each of the following kanji characters: ${kanjiChars}, provide a JSON object with a "kanji" property containing an array of objects. Each object must include: "char" (the kanji character), "compounds" (an array of 3-5 common compound word objects, each with "word" (the compound word) and "hira" (full hiragana reading of the compound word)), "on" (on'yomi reading in katakana), "kun" (kun'yomi reading), "myanmar" (Myanmar/Burmese meaning written in Burmese script ONLY — never Korean, never Chinese, never English), and "ex" (array of 2 example objects). Each object in "ex" must have: "jp" (Japanese example sentence), "hira" (full hiragana reading of the sentence), and "meaning" (Myanmar/Burmese translation written in Burmese script ONLY — never Korean). Output only JSON without explanation.`;
+    const prompt = `For each of the following kanji characters: ${kanjiChars}, provide a JSON object with a "kanji" property containing an array of objects. Each object must include: "char" (the kanji character), "compounds" (an array of 3-5 common compound word objects, each with "word" (the compound word), "hira" (full hiragana reading of the compound word), and "meaning" (Myanmar/Burmese translation of the compound word written in Burmese script ONLY — never Korean, never Chinese, never English)), "on" (on'yomi reading in katakana), "kun" (kun'yomi reading), "myanmar" (Myanmar/Burmese meaning written in Burmese script ONLY — never Korean, never Chinese, never English), and "ex" (array of 2 example objects). Each object in "ex" must have: "jp" (Japanese example sentence), "hira" (full hiragana reading of the sentence), and "meaning" (Myanmar/Burmese translation written in Burmese script ONLY — never Korean). Output only JSON without explanation.`;
 
     let kanjiResult = null;
     let lastError = null;
@@ -521,6 +693,9 @@ async function fetchKanjiData() {
 
         // Save AI-enriched data back to Supabase (overrides original data)
         saveKanjiToSupabase(kanjiData);
+
+        // Preload the next batch of kanji with AI in the background
+        preloadNextBatch(kanjiData.map(k => k.char));
     } else {
         // All AI providers failed — kanjiData already contains local data with compounds
         // and Myanmar meanings from buildKanjiDataFromCSV (set before the API call).
@@ -561,6 +736,16 @@ function cleanAIResponse(data) {
         // Clean Myanmar meaning
         if (containsKorean(item.myanmar)) {
             item.myanmar = '';
+        }
+
+        // Clean compound meanings
+        if (Array.isArray(item.compounds)) {
+            item.compounds = item.compounds.map(c => {
+                if (c && typeof c === 'object' && containsKorean(c.meaning)) {
+                    c.meaning = '';
+                }
+                return c;
+            });
         }
 
         // Clean examples
@@ -731,12 +916,15 @@ function openModal(index) {
     document.getElementById('modalKanji').innerText = item.char;
 
     // Display compound words with furigana (hiragana on top of kanji)
+    // and Myanmar meaning (if available)
     const compoundEl = document.getElementById('modalCompound');
     const compounds = item.compounds || [];
     if (compounds.length > 0) {
-        compoundEl.innerHTML = compounds.map(c =>
-            buildFuriganaHTML(c.word || '', c.hira || '')
-        ).join('、');
+        compoundEl.innerHTML = compounds.map(c => {
+            const furigana = buildFuriganaHTML(c.word || '', c.hira || '');
+            const meaning = c.meaning ? `<span style="color: var(--text-muted); font-size: 0.9rem; font-weight: normal;"> — ${c.meaning}</span>` : '';
+            return `<span style="display: block; margin-bottom: 4px;">${furigana}${meaning}</span>`;
+        }).join('');
     } else if (item.compound) {
         compoundEl.innerText = item.compound;
     } else {
@@ -875,6 +1063,7 @@ function openEditForm() {
     // Fill the form with current values
     const compounds = item.compounds || [];
     document.getElementById('editCompound').value = compounds.map(c => c.word || '').join('、');
+    document.getElementById('editCompoundHira').value = compounds.map(c => c.hira || '').join('、');
     document.getElementById('editOn').value = item.on || '';
     document.getElementById('editKun').value = item.kun || '';
     document.getElementById('editMyanmar').value = item.myanmar || '';
@@ -891,8 +1080,10 @@ function saveEdit() {
 
     const edits = loadUserEdits();
     const compoundText = document.getElementById('editCompound').value.trim();
+    const hiraText = document.getElementById('editCompoundHira').value.trim();
+    const hiraList = hiraText ? hiraText.split(/[、,]/).map(h => h.trim()).filter(Boolean) : [];
     const compounds = compoundText
-        ? compoundText.split(/[、,]/).map(w => w.trim()).filter(Boolean).map(word => ({ word, hira: '' }))
+        ? compoundText.split(/[、,]/).map((w, i) => w.trim()).filter(Boolean).map((word, i) => ({ word, hira: hiraList[i] || '' }))
         : [];
 
     const edit = {
@@ -1033,6 +1224,8 @@ function selectAnswer(selected, correct) {
         const q = testQuestions[currentQuestionIndex];
         if (q && !learnedKanji.some(k => k.char === q.char)) {
             learnedKanji.push(q);
+            // Mark as learned in Supabase (syncs across devices)
+            updateKanjiInSupabase(q.char, { learned: true });
         }
     }
     currentQuestionIndex++;
