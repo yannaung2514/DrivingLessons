@@ -51,13 +51,51 @@
     <div class="modal-content">
         <span class="close-btn" onclick="closeModal()">&times;</span>
         <div class="kanji-display-large" id="modalKanji"></div>
-        <div class="detail-row"><strong>Compound Words:</strong> <span id="modalCompound" style="color: var(--primary); font-size: 1.1rem; font-weight: bold; line-height: 2.2;"></span></div>
-        <div class="detail-row"><strong>運読 (On'yomi):</strong> <span id="modalOn"></span></div>
-        <div class="detail-row"><strong>訓読 (Kun'yomi):</strong> <span id="modalKun"></span></div>
-        <div class="detail-row"><strong>Myanmar Meaning:</strong> <span id="modalMyanmar" style="color: var(--primary); font-weight: bold;"></span></div>
-        <div class="examples-list">
-            <strong>Usage Examples:</strong>
-            <ul id="modalExamples" style="margin: 5px 0 0 20px; padding: 0;"></ul>
+
+        <!-- View Mode -->
+        <div id="modalViewMode">
+            <div class="detail-row"><strong>Compound Words:</strong> <span id="modalCompound" style="color: var(--primary); font-size: 1.1rem; font-weight: bold; line-height: 2.2;"></span></div>
+            <div class="detail-row"><strong>運読 (On'yomi):</strong> <span id="modalOn"></span></div>
+            <div class="detail-row"><strong>訓読 (Kun'yomi):</strong> <span id="modalKun"></span></div>
+            <div class="detail-row"><strong>Myanmar Meaning:</strong> <span id="modalMyanmar" style="color: var(--primary); font-weight: bold;"></span></div>
+            <div class="examples-list">
+                <strong>Usage Examples:</strong>
+                <ul id="modalExamples" style="margin: 5px 0 0 20px; padding: 0;"></ul>
+            </div>
+            <div style="margin-top: 15px; display: flex; gap: 10px; flex-wrap: wrap;">
+                <button class="btn" style="width: auto; padding: 6px 14px; font-size: 0.85rem;" onclick="openEditForm()">✏️ Edit</button>
+                <button class="btn" style="width: auto; padding: 6px 14px; font-size: 0.85rem; background: var(--primary);" onclick="openNotesPopup()">📝 Notes</button>
+            </div>
+        </div>
+
+        <!-- Edit Mode -->
+        <div id="modalEditMode" style="display: none;">
+            <h3 style="margin-bottom: 10px;">Edit Kanji Data</h3>
+            <div class="detail-row"><strong>Compound Words:</strong></div>
+            <textarea id="editCompound" rows="2" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.95rem; margin-bottom: 10px;" placeholder="e.g. 確認、確実、正確"></textarea>
+            <div class="detail-row"><strong>運読 (On'yomi):</strong></div>
+            <input type="text" id="editOn" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.95rem; margin-bottom: 10px;">
+            <div class="detail-row"><strong>訓読 (Kun'yomi):</strong></div>
+            <input type="text" id="editKun" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.95rem; margin-bottom: 10px;">
+            <div class="detail-row"><strong>Myanmar Meaning:</strong></div>
+            <input type="text" id="editMyanmar" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.95rem; margin-bottom: 10px;">
+            <div style="display: flex; gap: 10px; margin-top: 10px;">
+                <button class="btn" style="width: auto; padding: 6px 14px; font-size: 0.85rem; background: var(--success);" onclick="saveEdit()">💾 Save</button>
+                <button class="btn" style="width: auto; padding: 6px 14px; font-size: 0.85rem; background: #6c757d;" onclick="cancelEdit()">Cancel</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Notes Popup -->
+<div class="modal" id="notesModal">
+    <div class="modal-content" style="max-width: 500px;">
+        <span class="close-btn" onclick="closeNotesPopup()">&times;</span>
+        <h3 style="margin-bottom: 10px;">📝 Notes for <span id="notesKanjiChar"></span></h3>
+        <textarea id="notesText" rows="5" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.95rem; margin-bottom: 10px;" placeholder="Write your notes here..."></textarea>
+        <div style="display: flex; gap: 10px;">
+            <button class="btn" style="width: auto; padding: 6px 14px; font-size: 0.85rem; background: var(--success);" onclick="saveNote()">💾 Save Note</button>
+            <button class="btn" style="width: auto; padding: 6px 14px; font-size: 0.85rem; background: #ef4444;" onclick="deleteNote()">🗑️ Delete</button>
         </div>
     </div>
 </div>

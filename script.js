@@ -100,6 +100,7 @@ const fallbackKanji = [
 
 let viewedKanji = new Set();
 let currentQuestionIndex = 0;
+let currentModalIndex = 0; // Index of the kanji currently shown in the modal
 let score = 0;
 let testQuestions = [];
 let learnedKanji = []; // Kanji answered correctly in the test (current session)
@@ -259,6 +260,8 @@ async function fetchKanjiData() {
 
     // Render immediately using local data while API enrichment runs in the background.
     kanjiData = buildKanjiDataFromCSV(selectedKanji);
+    // Apply any user edits saved in localStorage
+    applyUserEdits();
     renderGrid();
     renderLearnedKanji();
 
@@ -643,6 +646,7 @@ function updateProgress() {
 
 const modal = document.getElementById('kanjiModal');
 function openModal(index) {
+    currentModalIndex = index;
     const item = kanjiData[index];
     document.getElementById('modalKanji').innerText = item.char;
 
@@ -715,6 +719,177 @@ function openModal(index) {
 
 function closeModal() {
     modal.style.display = 'none';
+    // Reset to view mode when closing
+    document.getElementById('modalViewMode').style.display = 'block';
+    document.getElementById('modalEditMode').style.display = 'none';
+}
+
+// ===== Edit Kanji Data =====
+// localStorage key for user edits
+const KANJI_EDITS_STORAGE_KEY = 'learnkanji_edits';
+// localStorage key for user notes
+const KANJI_NOTES_STORAGE_KEY = 'learnkanji_notes';
+
+// Load user edits from localStorage
+function loadUserEdits() {
+    try {
+        const stored = localStorage.getItem(KANJI_EDITS_STORAGE_KEY);
+        return stored ? JSON.parse(stored) : {};
+    } catch (e) {
+        console.warn('Failed to load kanji edits:', e.message);
+        return {};
+    }
+}
+
+// Save user edits to localStorage
+function saveUserEdits(edits) {
+    try {
+        localStorage.setItem(KANJI_EDITS_STORAGE_KEY, JSON.stringify(edits));
+    } catch (e) {
+        console.warn('Failed to save kanji edits:', e.message);
+    }
+}
+
+// Load user notes from localStorage
+function loadUserNotes() {
+    try {
+        const stored = localStorage.getItem(KANJI_NOTES_STORAGE_KEY);
+        return stored ? JSON.parse(stored) : {};
+    } catch (e) {
+        console.warn('Failed to load kanji notes:', e.message);
+        return {};
+    }
+}
+
+// Save user notes to localStorage
+function saveUserNotes(notes) {
+    try {
+        localStorage.setItem(KANJI_NOTES_STORAGE_KEY, JSON.stringify(notes));
+    } catch (e) {
+        console.warn('Failed to save kanji notes:', e.message);
+    }
+}
+
+// Apply user edits to kanjiData (called after loading local data)
+function applyUserEdits() {
+    const edits = loadUserEdits();
+    const editKeys = Object.keys(edits);
+    if (editKeys.length === 0) return;
+
+    for (const item of kanjiData) {
+        const edit = edits[item.char];
+        if (!edit) continue;
+        if (edit.compound !== undefined) item.compound = edit.compound;
+        if (edit.compounds !== undefined) item.compounds = edit.compounds;
+        if (edit.on !== undefined) item.on = edit.on;
+        if (edit.kun !== undefined) item.kun = edit.kun;
+        if (edit.myanmar !== undefined) item.myanmar = edit.myanmar;
+    }
+}
+
+// Open the edit form for the current kanji
+function openEditForm() {
+    const item = kanjiData[currentModalIndex];
+    if (!item) return;
+
+    // Fill the form with current values
+    const compounds = item.compounds || [];
+    document.getElementById('editCompound').value = compounds.map(c => c.word || '').join('、');
+    document.getElementById('editOn').value = item.on || '';
+    document.getElementById('editKun').value = item.kun || '';
+    document.getElementById('editMyanmar').value = item.myanmar || '';
+
+    // Switch to edit mode
+    document.getElementById('modalViewMode').style.display = 'none';
+    document.getElementById('modalEditMode').style.display = 'block';
+}
+
+// Save the edited data
+function saveEdit() {
+    const item = kanjiData[currentModalIndex];
+    if (!item) return;
+
+    const edits = loadUserEdits();
+    const compoundText = document.getElementById('editCompound').value.trim();
+    const compounds = compoundText
+        ? compoundText.split(/[、,]/).map(w => w.trim()).filter(Boolean).map(word => ({ word, hira: '' }))
+        : [];
+
+    const edit = {
+        compound: compounds[0]?.word || '',
+        compounds: compounds,
+        on: document.getElementById('editOn').value.trim(),
+        kun: document.getElementById('editKun').value.trim(),
+        myanmar: document.getElementById('editMyanmar').value.trim(),
+    };
+
+    // Save to localStorage
+    edits[item.char] = edit;
+    saveUserEdits(edits);
+
+    // Apply to current data
+    item.compound = edit.compound;
+    item.compounds = edit.compounds;
+    item.on = edit.on;
+    item.kun = edit.kun;
+    item.myanmar = edit.myanmar;
+
+    // Refresh the modal display
+    openModal(currentModalIndex);
+    alert('✅ Saved! Your edit for "' + item.char + '" is stored in this browser.');
+}
+
+// Cancel editing
+function cancelEdit() {
+    document.getElementById('modalViewMode').style.display = 'block';
+    document.getElementById('modalEditMode').style.display = 'none';
+}
+
+// ===== Notes =====
+// Open the notes popup for the current kanji
+function openNotesPopup() {
+    const item = kanjiData[currentModalIndex];
+    if (!item) return;
+
+    document.getElementById('notesKanjiChar').innerText = item.char;
+    const notes = loadUserNotes();
+    document.getElementById('notesText').value = notes[item.char] || '';
+    document.getElementById('notesModal').style.display = 'flex';
+}
+
+// Close the notes popup
+function closeNotesPopup() {
+    document.getElementById('notesModal').style.display = 'none';
+}
+
+// Save the note for the current kanji
+function saveNote() {
+    const item = kanjiData[currentModalIndex];
+    if (!item) return;
+
+    const notes = loadUserNotes();
+    const text = document.getElementById('notesText').value.trim();
+    if (text) {
+        notes[item.char] = text;
+    } else {
+        delete notes[item.char];
+    }
+    saveUserNotes(notes);
+    alert('✅ Note saved for "' + item.char + '"!');
+    closeNotesPopup();
+}
+
+// Delete the note for the current kanji
+function deleteNote() {
+    const item = kanjiData[currentModalIndex];
+    if (!item) return;
+
+    const notes = loadUserNotes();
+    delete notes[item.char];
+    saveUserNotes(notes);
+    document.getElementById('notesText').value = '';
+    alert('🗑️ Note deleted for "' + item.char + '".');
+    closeNotesPopup();
 }
 
 function startTest() {
