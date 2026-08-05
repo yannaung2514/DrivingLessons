@@ -1,7 +1,32 @@
 // Kanji are loaded from kanjidata.js, then enriched with AI-generated data (compound, Myanmar, examples with hiragana).
 // Falls back to built-in data if the data file or API is unavailable.
-// apiConfig is defined in config.js (excluded from git — see .gitignore)
+// The apiConfig below is defined inline so the app works as a pure static site on Vercel
+// (config.js is git-ignored and would 404 on deployment). If config.js IS present locally,
+// it overrides this default via window.apiConfig.
 let kanjiData = [];
+
+// Default AI configuration — Gemini direct API (browser call)
+// NOTE: No API key is hardcoded here (GitHub push protection blocks secrets).
+// To enable AI examples, create a local config.js with your key (see config.example.js),
+// or the app gracefully falls back to showing kanji from kanjidata.js without AI examples.
+const apiConfig = window.apiConfig || {
+    kanjiCount: 10,
+    maxRetries: 2, // Retries before giving up
+
+    providers: [
+        {
+            name: 'gemini',
+            apiKey: '', // ← Add your Gemini API key here (starts with "AIza...")
+            model: 'gemini-3.5-flash',
+            apiUrl: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent',
+        },
+    ],
+};
+
+// Proxy server settings (set to true only if running server.js locally)
+if (apiConfig.useProxy === undefined) {
+    apiConfig.useProxy = false;
+}
 
 // Fallback kanji data — used when CSV or API is unavailable.
 const fallbackKanji = [
@@ -830,58 +855,3 @@ function renderLearnedKanji() {
 // Load saved learned kanji on startup, then fetch kanji data
 loadSavedLearnedKanji();
 fetchKanjiData();
-</arg_value>
-<task_progress>
-- [x] Read server-config.js to understand OpenRouter AI config
-- [x] Read current config.js (OpenRouter already added)
-- [x] Update script.js to support OpenRouter
-- [x] Update .gitignore for server-config.js
-- [x] Update config.example.js
-- [x] Fix useProxy flag preventing direct API calls
-- [x] Update config.js to use direct API calls (no proxy)
-- [x] Update server.js to port 3001
-- [x] Start proxy server
-- [x] Verify proxy server is working
-- [x] Verify app falls back gracefully when all providers fail
-- [x] Inform user server is already running
-- [x] Confirm app works without AI credits
-- [x] Switch to direct Gemini API (no proxy)
-- [x] Add Myanmar translations to kanjidata.js
-- [x] Fix duplicate fs declaration
-- [x] Run translation script
-- [x] Verify Myanmar text added (1,977/2,136 kanji translated)
-- [x] Delete unnecessary files
-- [x] Create package.json for Vercel deployment
-- [x] Configure vercel.json for static site deployment
-- [x] Fix Vercel deployment error
-- [x] Prepare for Vercel environment variables
-- [x] Deploy to Vercel
-- [x] Fix 404 error
-- [x] Redeploy successfully
-- [x] Update server.js to serve static files
-- [x] Rededeply to Vercel with static file serving
-- [x] Update config.js to use only Gemini with env var
-- [x] Redeploy to Vercel with Gemini env var
-- [x] Final redeploy to Vercel
-- [x] Fix server.js 404 error handling
-- [x] Fix server.js to use absolute paths
-- [x] Make server-config.js optional for Vercel
-- [x] Redeploy with optional server-config.js
-- [x] Configure vercel.json for proper static site deployment
-- [x] Redeploy as static site
-- [x] Simplify vercel.json to let Vercel auto-detect
-- [x] Redeploy with simplified vercel.json
-- [x] Remove server.js for pure static deployment
-- [x] Remove package.json for pure static deployment
-- [x] Create api/index.js for Vercel static site
-- [x] Remove api folder
-- [x] Add package.json back for static site
-- [x] Remove package.json again
-- [x] Configure vercel.json for static files
-- [x] Create minimal server.js for Vercel
-- [x] Guide user to delete and recreate Vercel project
-- [x] Fix script.js to load from kanjidata.js
-- [ ] Push to GitHub
-- [ ] Redeploy to Vercel
-</task_progress>
-</write_to_file>
