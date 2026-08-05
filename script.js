@@ -1,4 +1,4 @@
-// Kanji are loaded from kanjimaster.js, then enriched with AI-generated data (compound, Myanmar, examples with hiragana).
+// Kanji are loaded from kanjidata.js, then enriched with AI-generated data (compound, Myanmar, examples with hiragana).
 // Falls back to built-in data if the data file or API is unavailable.
 // apiConfig is defined in config.js (excluded from git — see .gitignore)
 let kanjiData = [];
@@ -146,14 +146,20 @@ async function loadLocalKanjiData() {
     }
 
     try {
-        const response = await fetch('kanjimaster.json');
-        if (!response.ok) throw new Error(`kanjimaster.json fetch failed (${response.status})`);
-        const data = await response.json();
+        const response = await fetch('kanjidata.js');
+        if (!response.ok) throw new Error(`kanjidata.js fetch failed (${response.status})`);
+        const text = await response.text();
+        const match = text.match(/const kanjiMasterData = (\[[\s\S]*?);/);
+        if (!match) {
+            console.warn('kanjidata.js did not contain kanjiMasterData');
+            return [];
+        }
+        const data = JSON.parse(match[1]);
         if (Array.isArray(data)) return data;
-        console.warn('kanjimaster.json did not contain an array');
+        console.warn('kanjidata.js did not contain an array');
         return [];
     } catch (error) {
-        console.warn('Failed to load kanjimaster.json:', error.message);
+        console.warn('Failed to load kanjidata.js:', error.message);
         return [];
     }
 }
@@ -179,9 +185,9 @@ function recoverTruncatedJSON(text) {
 
 async function fetchKanjiData() {
     loadingMessage.style.display = 'block';
-    loadingMessage.textContent = 'Loading kanji from kanjimaster.js…';
+    loadingMessage.textContent = 'Loading kanji from kanjidata.js…';
 
-    // Step 1: Use local kanji data from kanjimaster.js or kanjimaster.json.
+    // Step 1: Use local kanji data from kanjidata.js.
     const csvKanji = await loadLocalKanjiData();
 
     if (!csvKanji || csvKanji.length === 0) {
@@ -194,7 +200,7 @@ async function fetchKanjiData() {
         return;
     }
 
-    // Step 2: Select random kanji from the CSV, excluding already-learned kanji
+    // Step 2: Select random kanji from the data, excluding already-learned kanji
     const availableKanji = csvKanji.filter(k => !isKanjiLearned(k.char));
     const selectedKanji = [...availableKanji]
         .sort(() => 0.5 - Math.random())
@@ -234,7 +240,7 @@ async function fetchKanjiData() {
         return;
     }
 
-    // Step 4: Try each provider in order (Gemini → OpenAI → DeepSeek)
+    // Step 4: Try each provider in order (Gemini → OpenAI → OpenRouter → DeepSeek)
     const prompt = `For each of the following kanji characters: ${kanjiChars}, provide a JSON object with a "kanji" property containing an array of objects. Each object must include: "char" (the kanji character), "compounds" (an array of 3-5 common compound word objects, each with "word" (the compound word) and "hira" (full hiragana reading of the compound word)), "on" (on'yomi reading in katakana), "kun" (kun'yomi reading), "myanmar" (Myanmar/Burmese meaning written in Burmese script ONLY — never Korean, never Chinese, never English), and "ex" (array of 2 example objects). Each object in "ex" must have: "jp" (Japanese example sentence), "hira" (full hiragana reading of the sentence), and "meaning" (Myanmar/Burmese translation written in Burmese script ONLY — never Korean). Output only JSON without explanation.`;
 
     let kanjiResult = null;
@@ -824,3 +830,58 @@ function renderLearnedKanji() {
 // Load saved learned kanji on startup, then fetch kanji data
 loadSavedLearnedKanji();
 fetchKanjiData();
+</arg_value>
+<task_progress>
+- [x] Read server-config.js to understand OpenRouter AI config
+- [x] Read current config.js (OpenRouter already added)
+- [x] Update script.js to support OpenRouter
+- [x] Update .gitignore for server-config.js
+- [x] Update config.example.js
+- [x] Fix useProxy flag preventing direct API calls
+- [x] Update config.js to use direct API calls (no proxy)
+- [x] Update server.js to port 3001
+- [x] Start proxy server
+- [x] Verify proxy server is working
+- [x] Verify app falls back gracefully when all providers fail
+- [x] Inform user server is already running
+- [x] Confirm app works without AI credits
+- [x] Switch to direct Gemini API (no proxy)
+- [x] Add Myanmar translations to kanjidata.js
+- [x] Fix duplicate fs declaration
+- [x] Run translation script
+- [x] Verify Myanmar text added (1,977/2,136 kanji translated)
+- [x] Delete unnecessary files
+- [x] Create package.json for Vercel deployment
+- [x] Configure vercel.json for static site deployment
+- [x] Fix Vercel deployment error
+- [x] Prepare for Vercel environment variables
+- [x] Deploy to Vercel
+- [x] Fix 404 error
+- [x] Redeploy successfully
+- [x] Update server.js to serve static files
+- [x] Rededeply to Vercel with static file serving
+- [x] Update config.js to use only Gemini with env var
+- [x] Redeploy to Vercel with Gemini env var
+- [x] Final redeploy to Vercel
+- [x] Fix server.js 404 error handling
+- [x] Fix server.js to use absolute paths
+- [x] Make server-config.js optional for Vercel
+- [x] Redeploy with optional server-config.js
+- [x] Configure vercel.json for proper static site deployment
+- [x] Redeploy as static site
+- [x] Simplify vercel.json to let Vercel auto-detect
+- [x] Redeploy with simplified vercel.json
+- [x] Remove server.js for pure static deployment
+- [x] Remove package.json for pure static deployment
+- [x] Create api/index.js for Vercel static site
+- [x] Remove api folder
+- [x] Add package.json back for static site
+- [x] Remove package.json again
+- [x] Configure vercel.json for static files
+- [x] Create minimal server.js for Vercel
+- [x] Guide user to delete and recreate Vercel project
+- [x] Fix script.js to load from kanjidata.js
+- [ ] Push to GitHub
+- [ ] Redeploy to Vercel
+</task_progress>
+</write_to_file>
