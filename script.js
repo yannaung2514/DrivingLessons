@@ -256,6 +256,8 @@ async function preloadNextBatch(currentChars) {
         const enriched = await callAIForKanji(nextBatch);
         if (enriched && enriched.length > 0) {
             await saveKanjiToSupabase(enriched);
+            // Remember these chars so the next restart shows this AI-ready batch first.
+            savePreloadedChars(enriched.map(k => k.char));
             console.log(`Preloaded ${enriched.length} kanji to Supabase`);
         }
     } catch (e) {
@@ -347,6 +349,29 @@ let savedLearnedKanji = []; // Kanji saved in localStorage (persistent)
 
 // localStorage key for saved learned kanji
 const LEARNED_KANJI_STORAGE_KEY = 'learnkanji_learned';
+
+// localStorage key for the batch of kanji that was pre-loaded with AI data
+// in the background, so a restart can show it immediately without waiting.
+const PRELOADED_BATCH_STORAGE_KEY = 'learnkanji_preloaded_batch';
+
+// Load the chars of the previously preloaded (AI-ready) batch from localStorage
+function loadPreloadedChars() {
+    try {
+        const stored = localStorage.getItem(PRELOADED_BATCH_STORAGE_KEY);
+        return Array.isArray(JSON.parse(stored)) ? JSON.parse(stored) : [];
+    } catch (e) {
+        return [];
+    }
+}
+
+// Remember which chars were just preloaded with AI data so a restart can use them
+function savePreloadedChars(chars) {
+    try {
+        localStorage.setItem(PRELOADED_BATCH_STORAGE_KEY, JSON.stringify(Array.isArray(chars) ? chars : []));
+    } catch (e) {
+        console.warn('Failed to save preloaded batch:', e.message);
+    }
+}
 
 // Load saved learned kanji from localStorage
 function loadSavedLearnedKanji() {
@@ -490,13 +515,28 @@ async function fetchKanjiData() {
         return;
     }
 
-    // Step 2: Select random kanji from the data, excluding already-learned kanji
+    // Step 2: Select kanji for this session, excluding already-learned kanji.
+    // Prefer the batch that was pre-loaded with AI data in the background so a
+    // restart shows AI-ready kanji immediately (no foreground wait).
     const availableKanji = csvKanji.filter(k => !isKanjiLearned(k.char));
-    const selectedKanji = [...availableKanji]
-        .sort(() => 0.5 - Math.random())
-        .slice(0, Math.min(apiConfig.kanjiCount, availableKanji.length));
+    const preloadedSet = new Set(loadPreloadedChars());
+    const preloadedAvailable = availableKanji.filter(k => preloadedSet.has(k.char));
 
-    // If not enough unlearned kanji, fill with learned ones
+    let selectedKanji = [...preloadedAvailable]
+        .sort(() => 0.5 - Math.random())
+        .slice(0, apiConfig.kanjiCount);
+
+    // Fill any remaining slots with random unlearned kanji.
+    if (selectedKanji.length < apiConfig.kanjiCount) {
+        const used = new Set(selectedKanji.map(k => k.char));
+        const rest = [...availableKanji]
+            .filter(k => !used.has(k.char))
+            .sort(() => 0.5 - Math.random())
+            .slice(0, apiConfig.kanjiCount - selectedKanji.length);
+        selectedKanji.push(...rest);
+    }
+
+    // If not enough unlearned kanji, fill with learned ones.
     if (selectedKanji.length < apiConfig.kanjiCount) {
         const learnedChars = new Set(savedLearnedKanji.map(k => k.char));
         const learnedRemaining = csvKanji.filter(k => learnedChars.has(k.char));
@@ -507,12 +547,30 @@ async function fetchKanjiData() {
         selectedKanji.push(...fillKanji);
     }
 
+    // Are all selected kanji already AI-ready (preloaded) in Supabase?
+    // If so, we can skip the foreground AI call and show them instantly.
+    const allAIReady = selectedKanji.length > 0 && selectedKanji.every(sel => {
+        const src = csvKanji.find(c => c.char === sel.char);
+        return src &&
+            Array.isArray(src.ex) && src.ex.length > 0 &&
+            Array.isArray(src.compounds) && src.compounds.some(c => c && c.meaning);
+    });
+
     // Render immediately using local data while API enrichment runs in the background.
     kanjiData = buildKanjiDataFromCSV(selectedKanji);
     // Apply any user edits saved in localStorage
     applyUserEdits();
     renderGrid();
     renderLearnedKanji();
+
+    // If the whole selected batch is already AI-loaded (from a background preload),
+    // show it instantly and preload the NEXT batch in the background — no wait.
+    if (allAIReady) {
+        loadingMessage.style.display = 'none';
+        saveKanjiToSupabase(kanjiData);
+        preloadNextBatch(kanjiData.map(k => k.char));
+        return;
+    }
 
     const kanjiChars = selectedKanji.map(k => k.char).join(', ');
     const useProxy = apiConfig.useProxy === true;
