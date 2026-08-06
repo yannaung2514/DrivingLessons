@@ -1,7 +1,13 @@
 // Vercel serverless function — reads/writes kanji data to Supabase.
 // Uses the service role key server-side (never exposed to the browser).
+// NOTE: Keys must come from environment variables ONLY — never hardcode them.
 const SUPABASE_URL = process.env.SUPABASE_URL || 'https://zfnwbfbijrpaypxnjryb.supabase.co';
-const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpmbndiZmJpanJwYXlweG5qcnliIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MTgxNTUxMiwiZXhwIjoyMDk3MzkxNTEyfQ.jF3cRcOg5evZ5OA1hzUjdK2vFDn_JkIAB367EJxdZJg';
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+if (!SUPABASE_SERVICE_ROLE_KEY) {
+    throw new Error('SUPABASE_SERVICE_ROLE_KEY environment variable is required.');
+}
+
 
 // Helper to call Supabase REST API
 async function supabaseFetch(path, options = {}) {
