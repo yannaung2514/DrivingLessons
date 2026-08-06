@@ -342,6 +342,7 @@ const fallbackKanji = [
 let viewedKanji = new Set();
 let currentQuestionIndex = 0;
 let currentModalIndex = 0; // Index of the kanji currently shown in the modal
+let currentModalItem = null; // Item currently shown in the modal (works for grid + learned/database kanji)
 let score = 0;
 let testQuestions = [];
 let learnedKanji = []; // Kanji answered correctly in the test (current session)
@@ -972,6 +973,7 @@ const modal = document.getElementById('kanjiModal');
 // Fill the kanji detail modal with the given kanji item
 // (fields: char, compounds, on, kun, myanmar, ex, notes).
 function fillKanjiModal(item) {
+    currentModalItem = item;
     const modalKanjiEl = document.getElementById('modalKanji');
     modalKanjiEl.innerText = item.char;
 
@@ -1136,7 +1138,7 @@ function applyUserEdits() {
 
 // Open the edit form for the current kanji
 function openEditForm() {
-    const item = kanjiData[currentModalIndex];
+    const item = currentModalItem;
     if (!item) return;
 
     // Fill the form with current values
@@ -1154,7 +1156,7 @@ function openEditForm() {
 
 // Save the edited data
 function saveEdit() {
-    const item = kanjiData[currentModalIndex];
+    const item = currentModalItem;
     if (!item) return;
 
     const edits = loadUserEdits();
@@ -1192,8 +1194,8 @@ function saveEdit() {
         compounds: edit.compounds,
     });
 
-    // Refresh the modal display
-    openModal(currentModalIndex);
+    // Refresh the modal display (works for both grid and learned/database kanji)
+    fillKanjiModal(item);
     alert('✅ Saved! Your edit for "' + item.char + '" is stored in this browser and Supabase.');
 }
 
@@ -1206,7 +1208,7 @@ function cancelEdit() {
 // ===== Notes =====
 // Open the notes popup for the current kanji
 function openNotesPopup() {
-    const item = kanjiData[currentModalIndex];
+    const item = currentModalItem;
     if (!item) return;
 
     document.getElementById('notesKanjiChar').innerText = item.char;
@@ -1222,7 +1224,7 @@ function closeNotesPopup() {
 
 // Save the note for the current kanji
 function saveNote() {
-    const item = kanjiData[currentModalIndex];
+    const item = currentModalItem;
     if (!item) return;
 
     const notes = loadUserNotes();
@@ -1241,7 +1243,7 @@ function saveNote() {
 
 // Delete the note for the current kanji
 function deleteNote() {
-    const item = kanjiData[currentModalIndex];
+    const item = currentModalItem;
     if (!item) return;
 
     const notes = loadUserNotes();
