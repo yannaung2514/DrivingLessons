@@ -2,10 +2,12 @@
 // Uses the service role key server-side (never exposed to the browser).
 // NOTE: Keys must come from environment variables ONLY — never hardcode them.
 const SUPABASE_URL = process.env.SUPABASE_URL || 'https://zfnwbfbijrpaypxnjryb.supabase.co';
-const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+// Accept either the canonical name or the shorter "SUPABASE_SERVICE_KEY" so it
+// works regardless of the env var name you configured in the dashboard.
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY;
 
 if (!SUPABASE_SERVICE_ROLE_KEY) {
-    throw new Error('SUPABASE_SERVICE_ROLE_KEY environment variable is required.');
+    throw new Error('SUPABASE_SERVICE_ROLE_KEY / SUPABASE_SERVICE_KEY environment variable is required.');
 }
 
 
