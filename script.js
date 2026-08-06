@@ -968,9 +968,10 @@ function updateProgress() {
 }
 
 const modal = document.getElementById('kanjiModal');
-function openModal(index) {
-    currentModalIndex = index;
-    const item = kanjiData[index];
+
+// Fill the kanji detail modal with the given kanji item
+// (fields: char, compounds, on, kun, myanmar, ex, notes).
+function fillKanjiModal(item) {
     const modalKanjiEl = document.getElementById('modalKanji');
     modalKanjiEl.innerText = item.char;
 
@@ -1052,6 +1053,13 @@ function openModal(index) {
     }
 
     modal.style.display = 'flex';
+}
+
+// Open the modal for a kanji from the current session grid.
+function openModal(index) {
+    currentModalIndex = index;
+    const item = kanjiData[index];
+    fillKanjiModal(item);
     viewedKanji.add(index);
     renderGrid();
 }
@@ -1337,6 +1345,42 @@ function showTestResults() {
     renderLearnedKanji();
 }
 
+// Fetch a single kanji's data from the database (Supabase) — NOT AI-generated.
+async function fetchOneKanjiFromDB(char) {
+    try {
+        const response = await fetch(`/api/supabase?char=${encodeURIComponent(char)}`, { method: 'GET' });
+        if (!response.ok) return null;
+        const rows = await response.json();
+        if (!Array.isArray(rows) || rows.length === 0) return null;
+        const row = rows[0];
+        return {
+            char: row.char,
+            compounds: Array.isArray(row.compounds) ? row.compounds : [],
+            on: row.on_yomi || '',
+            kun: row.kun_yomi || '',
+            myanmar: row.myanmar || row.english || '',
+            english: row.english || '',
+            ex: Array.isArray(row.examples) ? row.examples : [],
+            notes: row.notes || null,
+        };
+    } catch (e) {
+        console.warn('Failed to load kanji from DB:', e.message);
+        return null;
+    }
+}
+
+// Open the kanji detail popup for a learned kanji using its data from the
+// database (Supabase), not from AI.
+async function openLearnedKanji(char) {
+    const item = await fetchOneKanjiFromDB(char);
+    if (!item) {
+        alert(`Could not load data for "${char}" from the database.`);
+        return;
+    }
+    currentModalIndex = -1; // not part of the current session grid
+    fillKanjiModal(item);
+}
+
 // Display all learned kanji (saved + current session) in the "learned" group at the bottom
 function renderLearnedKanji() {
     const learnedSection = document.getElementById('learnedSection');
@@ -1380,6 +1424,10 @@ function renderLearnedKanji() {
         kanjiChar.className = 'kanji-char';
         kanjiChar.innerText = item.char;
         card.appendChild(kanjiChar);
+
+        // Clicking a learned kanji opens its detail popup (data from the database).
+        card.style.cursor = 'pointer';
+        card.onclick = () => openLearnedKanji(item.char);
 
         learnedGrid.appendChild(card);
     });
