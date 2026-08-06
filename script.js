@@ -971,7 +971,16 @@ const modal = document.getElementById('kanjiModal');
 function openModal(index) {
     currentModalIndex = index;
     const item = kanjiData[index];
-    document.getElementById('modalKanji').innerText = item.char;
+    const modalKanjiEl = document.getElementById('modalKanji');
+    modalKanjiEl.innerText = item.char;
+
+    // If a note is registered for this kanji, show it directly on hover.
+    const note = (loadUserNotes()[item.char]) || item.notes || '';
+    if (note && note.trim()) {
+        modalKanjiEl.title = note;
+    } else {
+        modalKanjiEl.removeAttribute('title');
+    }
 
     // Display compound words as a comma-separated list to the right of the
     // "(Compound Words)" label. Each item shows the word with furigana
