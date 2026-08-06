@@ -22,3 +22,10 @@ Thumbs.db
 .vscode/
 .idea/
 .vercel
+
+# Local helper scripts / DB dumps (never deploy)
+tmp-supabase-key-test.js
+generate-kanji-sql.js
+import-kanji-db.py
+kanji_data_inserts.sql
+
