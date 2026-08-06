@@ -112,12 +112,7 @@ header p {
     background-color: #ecfdf5;
     border-color: var(--success);
     color: #065f46;
-    cursor: default;
-}
-
-.kanji-card.learned:hover {
-    transform: none;
-    border-color: var(--success);
+    cursor: pointer;
 }
 
 /* Modal / Detail View */
