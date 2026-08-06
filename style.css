@@ -176,6 +176,14 @@ header p {
     font-weight: normal;
 }
 
+/* Myanmar meaning shown inline beside compound words (lighter color) */
+.compound-myanmar {
+    color: var(--text-muted);
+    font-weight: normal;
+    margin-left: 4px;
+    font-size: 0.95rem;
+}
+
 .examples-list {
     background: #f3f4f6;
     padding: 10px 15px;

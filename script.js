@@ -915,16 +915,20 @@ function openModal(index) {
     const item = kanjiData[index];
     document.getElementById('modalKanji').innerText = item.char;
 
-    // Display compound words with furigana (hiragana on top of kanji)
-    // and Myanmar meaning (if available)
+    // Display compound words as a comma-separated list to the right of the
+    // "(Compound Words)" label. Each item shows the word with furigana
+    // (hiragana on top of kanji) and its Myanmar meaning beside the kanji in ().
     const compoundEl = document.getElementById('modalCompound');
     const compounds = item.compounds || [];
     if (compounds.length > 0) {
         compoundEl.innerHTML = compounds.map(c => {
             const furigana = buildFuriganaHTML(c.word || '', c.hira || '');
-            const meaning = c.meaning ? `<span style="color: var(--text-muted); font-size: 0.9rem; font-weight: normal;"> — ${c.meaning}</span>` : '';
-            return `<span style="display: block; margin-bottom: 4px;">${furigana}${meaning}</span>`;
-        }).join('');
+            // Myanmar meaning shown to the side of the kanji word, in parentheses
+            const meaning = c.meaning
+                ? `<span class="compound-myanmar">(${escapeHTML(c.meaning)})</span>`
+                : '';
+            return `${furigana}${meaning}`;
+        }).join(', ');
     } else if (item.compound) {
         compoundEl.innerText = item.compound;
     } else {
