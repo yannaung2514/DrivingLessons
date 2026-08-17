@@ -335,6 +335,14 @@ function renderWords() {
         // Meaning area wrapped so a hover tooltip can show the uploaded photo
         const meaningWrap = document.createElement('div');
         meaningWrap.className = 'word-meaning-wrap';
+        
+        // Add click handler to open photo modal if photo exists
+        if (wordPhotos[w.id]) {
+            meaningWrap.classList.add('has-photo');
+            meaningWrap.addEventListener('click', () => {
+                openPhotoModal(w.id, w.word);
+            });
+        }
 
         const meaning = document.createElement('div');
         meaning.className = 'word-meaning';
@@ -555,6 +563,48 @@ function init() {
             };
             reader.readAsDataURL(file);
         });
+    }
+
+    // Photo modal click handlers
+    const modal = document.getElementById('photoModal');
+    if (modal) {
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                closePhotoModal();
+            }
+        });
+    }
+
+    // ESC key closes modal
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            closePhotoModal();
+        }
+    });
+}
+
+// ---------------------------------------------------------------------
+// Photo modal functions
+// ---------------------------------------------------------------------
+function openPhotoModal(wordId, wordTitle) {
+    const photo = wordPhotos[wordId];
+    if (!photo) return;
+    
+    const modal = document.getElementById('photoModal');
+    const img = document.getElementById('photoModalImg');
+    const caption = document.getElementById('photoModalCaption');
+    
+    if (modal && img && caption) {
+        img.src = photo;
+        caption.textContent = wordTitle;
+        modal.classList.add('active');
+    }
+}
+
+function closePhotoModal() {
+    const modal = document.getElementById('photoModal');
+    if (modal) {
+        modal.classList.remove('active');
     }
 }
 

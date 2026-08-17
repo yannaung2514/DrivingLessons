@@ -73,8 +73,17 @@
         <div class="category-note" id="categoryNote"></div>
         <div class="word-grid" id="wordGrid"></div>
         <input type="file" id="wordPhotoInput" accept="image/*" style="display:none;" title="画像を選ぶ">
-        <div class="word-hint">📷 ボタンで単語に画像を追加できます。意味の上にカーソルを置くと画像が見えます。<br>Click 📷 to add a photo; hover over the meaning to see it.</div>
+        <div class="word-hint">📷 ボタンで単語に画像を追加できます。意味をクリックすると画像がポップアップ表示されます。<br>Click 📷 to add a photo; click the meaning to see it in a popup.</div>
     </section>
+
+    <!-- Photo popup modal -->
+    <div id="photoModal" class="photo-modal" onclick="closePhotoModal()">
+        <div class="photo-modal-content" onclick="event.stopPropagation()">
+            <button class="photo-modal-close" onclick="closePhotoModal()" title="閉じる">✕</button>
+            <img id="photoModalImg" src="" alt="photo">
+            <div id="photoModalCaption" class="photo-modal-caption"></div>
+        </div>
+    </div>
 
     <!-- Favorites list -->
     <div id="favSection" style="margin-top: 25px; border-top: 2px solid #e5e7eb; padding-top: 20px;">
