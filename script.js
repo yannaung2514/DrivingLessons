@@ -115,7 +115,7 @@ function savePhotos() {
         localStorage.setItem(PHOTO_KEY, JSON.stringify(wordPhotos));
     } catch (e) {
         console.warn('Could not save photos (storage full?):', e.message);
-        alert('画像�E保存に失敗しました。�E真が大きすぎるか、容量がぁE�E��E�ぱぁE�E��E�す、EnPhoto storage failed.');
+        alert('画像の保存に失敗しました。画像が大きすぎるか、容量が足りません。\nPhoto storage failed.');
     }
 }
 
@@ -127,7 +127,7 @@ function pickPhoto(word) {
 
 async function togglePhoto(word) {
     if (wordPhotos[word]) {
-        if (confirm('こ�E単語�E画像を削除しますか�E�E�E�\nRemove this photo?')) {
+        if (confirm('この単語の画像を削除しますか？\nRemove this photo?')) {
             await deletePhoto(word);
             renderWords();
         }
@@ -457,9 +457,9 @@ function renderQuizQuestion() {
     quizAnswered = false;
     const q = quizQuestions[quizCurrent];
     document.getElementById('quizProgress').textContent =
-        `問顁E${quizCurrent + 1} / ${quizQuestions.length}`;
+        `問題 ${quizCurrent + 1} / ${quizQuestions.length}`;
     document.getElementById('quizPrompt').innerHTML =
-        `<div class="quiz-rule-label">こ�E絵は何�Eルール�E�E�E�Ebr><small>こ�E交通ルールを選んでください、E/small></div>` +
+        `<div class="quiz-rule-label">この絵は何のルール？<br><small>この交通ルールを選んでください。</small></div>` +
         `<div style="margin-top:12px">${q.rule.svg}</div>`;
 
     const optGrid = document.getElementById('quizOptions');
@@ -498,8 +498,8 @@ function answerQuiz(btn, chosen) {
     const resultBox = document.getElementById('quizResult');
     resultBox.style.display = 'block';
     resultBox.innerHTML =
-        (answeredCorrect ? '✁E正解! せいかい!' : `❁E不正解! ふせいかい�E�E�E�正解: ${correctTitle}�E�E�E�`) +
-        `<br>${correctTitle}�E�E�E�E{q.rule.jp}` +
+        (answeredCorrect ? '✅正解！せいかい！' : `❌不正解！ふせいかい。正解： ${correctTitle}。`) +
+        `<br>${correctTitle}の説明： ${q.rule.jp}` +
         `<br><span style="opacity:.85">${q.rule.myanmar}</span>`;
 
     const nextBtn = document.getElementById('nextQuizBtn');
@@ -520,7 +520,7 @@ function renderQuizResults() {
     const total = quizQuestions.length;
     const pct = total ? Math.round((quizScore / total) * 100) : 0;
     const passed = pct >= 90;
-    document.getElementById('quizProgress').textContent = '結果 結果';
+    document.getElementById('quizProgress').textContent = '結果';
     document.getElementById('quizPrompt').innerHTML = '';
     document.getElementById('quizOptions').innerHTML = '';
     const resultBox = document.getElementById('quizResult');
@@ -530,8 +530,8 @@ function renderQuizResults() {
         (total === 0
             ? '<div style="text-align:center;margin-top:8px">ルールがありません、E/div>'
             : (passed
-                ? '<div style="text-align:center;margin-top:8px">🎉 合格�E�E�E�よくできました�E�E�E�また練習を続けましょぁE�E��E�E/div>'
-                : '<div style="text-align:center;margin-top:8px">�E�E 合格には 90% 以上が目安です。あと少し�E�E�E�また挑戦しましょぁE�E��E�E/div>'));
+                ? '<div style="text-align:center;margin-top:8px">🎉 合格！よくできました！また練習を続けましょう。</div>'
+                : '<div style="text-align:center;margin-top:8px">📖 合格には 90% 以上が目安です。あと少し！また挑戦しましょう。</div>'));
     document.getElementById('restartQuizBtn').style.display = 'block';
     document.getElementById('nextQuizBtn').style.display = 'none';
 }
