@@ -316,19 +316,19 @@ function renderWords() {
 
         // Photo upload / remove button (top-right of card)
         const photoBtn = document.createElement('button');
-        photoBtn.className = 'word-photo-btn' + (wordPhotos[w.word] ? ' has-photo' : '');
+        photoBtn.className = 'word-photo-btn' + (wordPhotos[w.id] ? ' has-photo' : '');
         photoBtn.textContent = '📷';
-        photoBtn.title = wordPhotos[w.word]
+        photoBtn.title = wordPhotos[w.id]
             ? '画像を削除 (click to remove)'
             : '画像を追加 (add a photo)';
-        photoBtn.onclick = (e) => { e.stopPropagation(); togglePhoto(w.word); };
+        photoBtn.onclick = (e) => { e.stopPropagation(); togglePhoto(w.id); };
 
         // Small thumbnail if a photo already exists for this word
         let thumb = null;
-        if (wordPhotos[w.word]) {
+        if (wordPhotos[w.id]) {
             thumb = document.createElement('img');
             thumb.className = 'word-thumb';
-            thumb.src = wordPhotos[w.word];
+            thumb.src = wordPhotos[w.id];
             thumb.alt = w.word;
         }
 
@@ -356,11 +356,11 @@ function renderWords() {
         meaningWrap.appendChild(meaning);
 
         // Hover photo (shown above the meaning when hovering)
-        if (wordPhotos[w.word]) {
+        if (wordPhotos[w.id]) {
             const hover = document.createElement('div');
             hover.className = 'word-photo';
             const hoverImg = document.createElement('img');
-            hoverImg.src = wordPhotos[w.word];
+            hoverImg.src = wordPhotos[w.id];
             hoverImg.alt = w.word;
             hover.appendChild(hoverImg);
             meaningWrap.appendChild(hover);
@@ -651,7 +651,13 @@ async function loadWords() {
 
     // Fallback to local data if database not available
     if (allWords.length === 0) {
-        allWords = (window.trafficWordData || []).slice();
+        allWords = (window.trafficWordData || []).map((w, i) => ({
+            id: 'local_' + i,
+            word: w.word,
+            reading: w.reading,
+            myanmar: w.meaning,
+            category: w.category
+        }));
         useDatabase = false;
         console.log(`Using ${allWords.length} words from local data`);
     }
