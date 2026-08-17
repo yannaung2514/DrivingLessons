@@ -383,70 +383,157 @@ header p {
 
 .word-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-    gap: 12px;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 14px;
 }
 
 .word-card {
-    background: #fff;
-    border: 2px solid #e5e7eb;
-    border-radius: 12px;
-    padding: 12px;
+    position: relative;
+    background: linear-gradient(160deg, #ffffff 0%, #f7f9ff 100%);
+    border: 1px solid #e4e8f3;
+    border-radius: 16px;
+    padding: 16px 12px 14px;
     text-align: center;
     cursor: pointer;
-    transition: all 0.2s;
     user-select: none;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 2px;
+    gap: 4px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(79, 70, 229, 0.05);
+    transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease;
+    animation: wordPop 0.35s cubic-bezier(0.2, 0.9, 0.3, 1.2) backwards;
+}
+
+@keyframes wordPop {
+    from { opacity: 0; transform: translateY(14px) scale(0.96); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* colorful top accent bar per category (fallback = primary) */
+.word-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--primary), var(--accent));
 }
 
 .word-card:hover {
+    transform: translateY(-5px);
     border-color: var(--primary);
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    box-shadow: 0 12px 26px rgba(79, 70, 229, 0.18);
+}
+
+.word-card:active {
+    transform: translateY(-1px) scale(0.98);
 }
 
 .word-card.revealed {
-    background: #ecfdf5;
+    background: linear-gradient(160deg, #ffffff 0%, #ecfdf5 100%);
     border-color: var(--success);
+    box-shadow: 0 8px 20px rgba(42, 157, 143, 0.18);
 }
 
+/* ---- category pill ---- */
 .word-cat {
-    font-size: 0.7rem;
-    color: var(--text-muted);
-    background: #f3f4f6;
+    font-size: 0.68rem;
+    letter-spacing: 0.02em;
+    color: var(--primary);
+    background: #eef2ff;
+    border: 1px solid #dbe3f7;
     border-radius: 999px;
-    padding: 2px 8px;
-    margin-bottom: 4px;
+    padding: 2px 10px;
+    margin-bottom: 5px;
+    font-weight: 600;
 }
 
-.word-reading {
-    font-size: 0.8rem;
-    color: var(--text-muted);
-    min-height: 1rem;
+/* Category-specific pill colors */
+.word-card[data-cat="信号"] .word-cat { background: #ffe4e1; color: #c0392b; border-color: #f5c6c0; }
+.word-card[data-cat="交差点"] .word-cat { background: #e6f7ff; color: #0b7285; border-color: #b7e3f5; }
+.word-card[data-cat="停止・駐車"] .word-cat { background: #fff3e0; color: #bf5800; border-color: #f6d9ad; }
+.word-card[data-cat="歩行者"] .word-cat { background: #e8f7ee; color: #147a4a; border-color: #b7e2c9; }
+.word-card[data-cat="標識"] .word-cat { background: #eef0ff; color: #3d34b8; border-color: #cdd0f2; }
+.word-card[data-cat="速度"] .word-cat { background: #ffe9f4; color: #b02a6f; border-color: #f4c2da; }
+.word-card[data-cat="道路"] .word-cat { background: #f1f3e9; color: #6b7300; border-color: #d3d9b0; }
+.word-card[data-cat="運転"] .word-cat { background: #edf5ff; color: #145fb0; border-color: #bfd8f4; }
+.word-card[data-cat="免許"] .word-cat { background: #f4ecff; color: #6d2fb0; border-color: #d9c8f2; }
+.word-card[data-cat="安全"] .word-cat { background: #e6fdfa; color: #0a8f84; border-color: #aee8e2; }
+.word-card[data-cat="事故"] .word-cat { background: #ffeaea; color: #b01818; border-color: #f6bcbc; }
+.word-card[data-cat="高速道路"] .word-cat { background: #dff3ff; color: #07598f; border-color: #a8d6f2; }
+.word-card[data-cat="踏切・道路"] .word-cat { background: #f0ede6; color: #7a6a2f; border-color: #d9cfae; }
+.word-card[data-cat="車両"] .word-cat { background: #e8eefc; color: #264b9e; border-color: #bccdf0; }
+.word-card[data-cat="天候"] .word-cat { background: #eaf6f5; color: #2b6a67; border-color: #bfe0de; }
 
+/* ---- hiragana reading ---- */
 .word-reading {
-    font-size: 0.8rem;
-    color: var(--text-muted);
-    min-height: 1rem;
+    font-family: 'Hiragino Kaku Gothic ProN', 'Meiryo', sans-serif;
+    font-size: 0.82rem;
+    color: #6b7a99;
+    letter-spacing: 0.04em;
+    min-height: 1.1rem;
+    font-weight: 600;
 }
 
+/* ---- kanji (mincho serif with gradient text) ---- */
 .word-char {
-    font-size: 1.9rem;
-    font-weight: bold;
-    color: var(--text-main);
-    line-height: 1.3;
+    font-family: 'Hiragino Mincho ProN', 'Yu Mincho', 'Noto Serif JP', serif;
+    font-size: 2rem;
+    font-weight: 800;
+    line-height: 1.25;
     word-break: break-word;
+    background: linear-gradient(180deg, #1f2937 0%, var(--primary) 60%, var(--accent) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: var(--primary);
+    text-shadow: 0 1px 0 rgba(255,255,255,0.6);
+    filter: drop-shadow(0 1px 1px rgba(0,0,0,0.12));
+    transition: filter 0.2s ease, transform 0.2s ease;
 }
 
+.word-card:hover .word-char {
+    transform: scale(1.06);
+    filter: drop-shadow(0 3px 6px rgba(79,70,229,0.25));
+}
+
+/* Kanji underlines a subtle flourish per card on hover */
+.word-card::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 10%; right: 10%;
+    height: 3px;
+    border-radius: 3px;
+    background: linear-gradient(90deg, var(--primary), var(--accent));
+    opacity: 0;
+    transition: opacity 0.25s ease;
+}
+.word-card:hover::after { opacity: 1; }
+
+/* ---- Myanmar meaning ---- */
 .word-meaning {
-    font-size: 0.85rem;
-    color: #064e3b;
-    margin-top: 6px;
-    line-height: 1.4;
+    font-size: 0.9rem;
+    color: #0a5c40;
+    margin-top: 7px;
+    line-height: 1.5;
     min-height: 1.2rem;
+    font-family: 'Myanmar Text', 'Noto Sans Myanmar', sans-serif;
+    font-weight: 500;
+    padding-top: 6px;
+    border-top: 1px dashed #d5e5db;
+    width: 100%;
 }
 
+.word-card.revealed .word-meaning {
+    color: #147a4a;
+    font-weight: 700;
+    animation: revealPulse 0.4s ease;
 }
+
+@keyframes revealPulse {
+    0% { transform: scale(0.94); opacity: 0.4; }
+    60% { transform: scale(1.03); }
+    100% { transform: scale(1); opacity: 1; }
+}
+

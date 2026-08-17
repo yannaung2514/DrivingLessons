@@ -237,6 +237,9 @@ function renderWords() {
         const card = document.createElement('div');
         card.className = 'word-card';
         card.dataset.idx = idx;
+        card.dataset.cat = w.category;
+        // Staggered entrance animation (cap total delay so it stays snappy)
+        card.style.animationDelay = `${Math.min((wordGrid.children.length % 30) * 0.025, 0.7)}s`;
 
         const reading = document.createElement('div');
         reading.className = 'word-reading';
