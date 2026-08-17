@@ -715,7 +715,7 @@ function openEditWordModal(wordIndex) {
     const title = document.getElementById('wordModalTitle');
     
     if (modal && title) {
-        document.getElementById('wordId').value = wordIndex;
+        document.getElementById('wordId').value = word.id;
         document.getElementById('wordKanji').value = word.word;
         document.getElementById('wordReading').value = word.reading;
         document.getElementById('wordMyanmar').value = word.myanmar;
@@ -767,7 +767,10 @@ async function saveWord(event) {
         // Local storage fallback
         if (wordId) {
             // Edit
-            allWords[wordId] = { ...allWords[wordId], ...wordData };
+            const idx = allWords.findIndex(w => w.id === wordId);
+            if (idx >= 0) {
+                allWords[idx] = { ...allWords[idx], ...wordData };
+            }
             alert('単語を更新しましたローカル');
         } else {
             // Add
