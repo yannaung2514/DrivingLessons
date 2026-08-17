@@ -400,7 +400,7 @@ header p {
     flex-direction: column;
     align-items: center;
     gap: 4px;
-    overflow: hidden;
+    overflow: visible;
     box-shadow: 0 2px 8px rgba(79, 70, 229, 0.05);
     transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease;
     animation: wordPop 0.35s cubic-bezier(0.2, 0.9, 0.3, 1.2) backwards;
@@ -535,5 +535,104 @@ header p {
     0% { transform: scale(0.94); opacity: 0.4; }
     60% { transform: scale(1.03); }
     100% { transform: scale(1); opacity: 1; }
+}
+
+.word-hint {
+    margin-top: 16px;
+    text-align: center;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    line-height: 1.6;
+    background: #f7f8ff;
+    border: 1px dashed #cdd3f0;
+    border-radius: 10px;
+    padding: 10px 14px;
+}
+
+/* ---- word photo button (top-right) ---- */
+.word-photo-btn {
+    position: absolute;
+    top: 9px;
+    right: 9px;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: 1px solid #dbe0ef;
+    background: rgba(255, 255, 255, 0.9);
+    color: #8a93ad;
+    font-size: 14px;
+    line-height: 1;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+    transition: all 0.2s ease;
+    z-index: 20;
+}
+
+.word-photo-btn:hover {
+    transform: scale(1.12);
+    color: var(--primary);
+    border-color: var(--primary);
+}
+
+.word-photo-btn.has-photo {
+    background: var(--success);
+    border-color: var(--success);
+    color: #fff;
+}
+
+/* ---- small thumbnail (photo already added) ---- */
+.word-thumb {
+    width: 60px;
+    height: 60px;
+    object-fit: cover;
+    border-radius: 50%;
+    border: 2px solid var(--success);
+    margin-bottom: 4px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+}
+
+/* ---- meaning area wrapper (relative for the hover tooltip) ---- */
+.word-meaning-wrap {
+    position: relative;
+    width: 100%;
+}
+
+/* ---- hover photo tooltip (shows above the meaning) ---- */
+.word-photo {
+    position: absolute;
+    bottom: calc(100% + 10px);
+    left: 50%;
+    transform: translateX(-50%) translateY(6px) scale(0.9);
+    background: #fff;
+    border-radius: 12px;
+    padding: 5px;
+    box-shadow: 0 10px 26px rgba(0, 0, 0, 0.22);
+    border: 2px solid #e3e8f5;
+    opacity: 0;
+    pointer-events: none;
+    width: 150px;
+    z-index: 60;
+    transition: transform 0.18s ease, opacity 0.18s ease;
+}
+
+.word-photo img {
+    width: 100%;
+    height: auto;
+    display: block;
+    border-radius: 8px;
+    object-fit: cover;
+}
+
+.word-meaning-wrap:hover .word-photo {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0) scale(1);
+}
+
+/* keep the top accent bar corners tidy now that overflow is visible */
+.word-card::before {
+    border-radius: 16px 16px 0 0;
 }
 

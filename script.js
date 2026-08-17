@@ -94,6 +94,71 @@ if (!allWords.length && typeof trafficWordData !== 'undefined') {
 wordOrder = allWords.map((_, i) => i);
 hideMeaning = localStorage.getItem(WORD_HIDE_KEY) === '1';
 
+// ---- Word photos (uploaded by user, stored as base64 in localStorage) ----
+let wordPhotos = {};                 // { word: dataUrl }
+let photoTargetWord = null;          // which word the file input applies to
+const PHOTO_KEY = 'trafficWordPhotos';
+
+function loadPhotos() {
+    try {
+        const raw = localStorage.getItem(PHOTO_KEY);
+        wordPhotos = raw ? JSON.parse(raw) : {};
+    } catch (e) {
+        wordPhotos = {};
+    }
+    if (!wordPhotos || typeof wordPhotos !== 'object') wordPhotos = {};
+}
+
+function savePhotos() {
+    try {
+        localStorage.setItem(PHOTO_KEY, JSON.stringify(wordPhotos));
+    } catch (e) {
+        console.warn('Could not save photos (storage full?):', e.message);
+        alert('画像の保存に失敗しました。写真が大きすぎるか、容量がいっぱいです。\nPhoto storage failed.');
+    }
+}
+
+function pickPhoto(word) {
+    photoTargetWord = word;
+    const inp = document.getElementById('wordPhotoInput');
+    if (inp) { inp.value = ''; inp.click(); }
+}
+
+function togglePhoto(word) {
+    if (wordPhotos[word]) {
+        if (confirm('この単語の画像を削除しますか？\nRemove this photo?')) {
+            delete wordPhotos[word];
+            savePhotos();
+            renderWords();
+        }
+    } else {
+        pickPhoto(word);
+    }
+}
+
+// Downscale an image (data URL) to a small JPEG so localStorage stays usable.
+function downscaleImage(dataUrl, maxSize, cb) {
+    const img = new Image();
+    img.onload = () => {
+        let { width, height } = img;
+        const scale = Math.min(1, maxSize / Math.max(width, height));
+        width = Math.max(1, Math.round(width * scale));
+        height = Math.max(1, Math.round(height * scale));
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+        try {
+            cb(canvas.toDataURL('image/jpeg', 0.72));
+        } catch (e) {
+            cb(dataUrl); // fallback to original
+        }
+    };
+    img.onerror = () => cb(dataUrl);
+    img.src = dataUrl;
+}
+
 // ---------------------------------------------------------------------
 // Rendering
 // ---------------------------------------------------------------------
@@ -249,6 +314,28 @@ function renderWords() {
         word.className = 'word-char';
         word.textContent = w.word;
 
+        // Photo upload / remove button (top-right of card)
+        const photoBtn = document.createElement('button');
+        photoBtn.className = 'word-photo-btn' + (wordPhotos[w.word] ? ' has-photo' : '');
+        photoBtn.textContent = '📷';
+        photoBtn.title = wordPhotos[w.word]
+            ? '画像を削除 (click to remove)'
+            : '画像を追加 (add a photo)';
+        photoBtn.onclick = (e) => { e.stopPropagation(); togglePhoto(w.word); };
+
+        // Small thumbnail if a photo already exists for this word
+        let thumb = null;
+        if (wordPhotos[w.word]) {
+            thumb = document.createElement('img');
+            thumb.className = 'word-thumb';
+            thumb.src = wordPhotos[w.word];
+            thumb.alt = w.word;
+        }
+
+        // Meaning area wrapped so a hover tooltip can show the uploaded photo
+        const meaningWrap = document.createElement('div');
+        meaningWrap.className = 'word-meaning-wrap';
+
         const meaning = document.createElement('div');
         meaning.className = 'word-meaning';
         meaning.textContent = hideMeaning ? '？　(意味)' : w.meaning;
@@ -258,15 +345,29 @@ function renderWords() {
             meaning.textContent = w.meaning;
             card.classList.add('revealed');
         };
+        meaningWrap.appendChild(meaning);
+
+        // Hover photo (shown above the meaning when hovering)
+        if (wordPhotos[w.word]) {
+            const hover = document.createElement('div');
+            hover.className = 'word-photo';
+            const hoverImg = document.createElement('img');
+            hoverImg.src = wordPhotos[w.word];
+            hoverImg.alt = w.word;
+            hover.appendChild(hoverImg);
+            meaningWrap.appendChild(hover);
+        }
 
         const cat = document.createElement('div');
         cat.className = 'word-cat';
         cat.textContent = w.category;
 
+        if (thumb) card.appendChild(thumb);
+        card.appendChild(photoBtn);
         card.appendChild(cat);
         card.appendChild(reading);
         card.appendChild(word);
-        card.appendChild(meaning);
+        card.appendChild(meaningWrap);
         wordGrid.appendChild(card);
     });
 }
@@ -433,9 +534,28 @@ document.addEventListener('keydown', (e) => {
 // ---------------------------------------------------------------------
 function init() {
     loadFavorites();
+    loadPhotos();
     order = allRules.map((_, i) => i);
     currentIndex = 0;
     renderCurrent();
+
+    // Handle photo upload from the hidden file input
+    const inp = document.getElementById('wordPhotoInput');
+    if (inp) {
+        inp.addEventListener('change', () => {
+            const file = inp.files && inp.files[0];
+            if (!file || !photoTargetWord) return;
+            const reader = new FileReader();
+            reader.onload = () => {
+                downscaleImage(reader.result, 360, (dataUrl) => {
+                    wordPhotos[photoTargetWord] = dataUrl;
+                    savePhotos();
+                    renderWords();
+                });
+            };
+            reader.readAsDataURL(file);
+        });
+    }
 }
 
 init();
