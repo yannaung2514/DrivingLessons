@@ -137,28 +137,6 @@ async function deletePhoto(wordId) {
     // Remove from localStorage
     delete wordPhotos[wordId];
     savePhotos();
-}ly
-        wordPhotos[wordId] = dataUrl;
-        savePhotos();
-        return dataUrl;
-    }
-}
-
-/**
- * Delete photo (Supabase or localStorage)
- * @param {string} wordId - The word ID
- */
-async function deletePhoto(wordId) {
-    const photoUrl = wordPhotos[wordId];
-    
-    if (window.supabaseConfigured && supabaseClient && photoUrl && photoUrl.startsWith('http')) {
-        // Delete from Supabase
-        await deletePhotoFromSupabase(photoUrl);
-    }
-    
-    // Remove from localStorage
-    delete wordPhotos[wordId];
-    savePhotos();
 }
 
 // ============================================================
