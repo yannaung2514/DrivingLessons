@@ -115,7 +115,7 @@ function savePhotos() {
         localStorage.setItem(PHOTO_KEY, JSON.stringify(wordPhotos));
     } catch (e) {
         console.warn('Could not save photos (storage full?):', e.message);
-        alert('画像の保存に失敗しました。写真が大きすぎるか、容量がいっぱいです。\nPhoto storage failed.');
+        alert('画像�E保存に失敗しました。�E真が大きすぎるか、容量がぁE��ぱぁE��す、EnPhoto storage failed.');
     }
 }
 
@@ -127,7 +127,7 @@ function pickPhoto(word) {
 
 async function togglePhoto(word) {
     if (wordPhotos[word]) {
-        if (confirm('この単語の画像を削除しますか？\nRemove this photo?')) {
+        if (confirm('こ�E単語�E画像を削除しますか�E�\nRemove this photo?')) {
             await deletePhoto(word);
             renderWords();
         }
@@ -177,7 +177,7 @@ function renderCurrent() {
 
     // Favorite button state
     favBtn.classList.toggle('active', favorites.includes(rule.id));
-    favBtn.textContent = favorites.includes(rule.id) ? '★' : '☆';
+    favBtn.textContent = favorites.includes(rule.id) ? '☁E : '☁E;
 
     // Progress: percentage of rules marked viewed
     const pct = Math.round((viewed.size / allRules.length) * 100);
@@ -190,7 +190,7 @@ function renderCurrent() {
 function renderFavorites() {
     favCount.textContent = favorites.length;
     if (favorites.length === 0) {
-        favChips.innerHTML = '<span class="empty-note">まだお気に入りはありません。カードの ☆ を押して追加できます。</span>';
+        favChips.innerHTML = '<span class="empty-note">まだお気に入り�Eありません。カード�E ☁Eを押して追加できます、E/span>';
         return;
     }
     favChips.innerHTML = '';
@@ -249,7 +249,7 @@ function toggleFavorite() {
 }
 
 function clearFavorites() {
-    if (!confirm('お気に入りを全部消しますか？')) return;
+    if (!confirm('お気に入りを全部消しますか�E�E)) return;
     favorites = [];
     saveFavorites();
     renderCurrent();
@@ -277,7 +277,7 @@ function showMode(mode) {
 // ---------------------------------------------------------------------
 function renderWords() {
     wordCount.textContent = `${allWords.length} 言葉`;
-    hideMeaningBtn.textContent = hideMeaning ? '🙉 意味を見る' : '🙈 意味を隠す';
+    hideMeaningBtn.textContent = hideMeaning ? '🙉 意味を見る' : '🙈 意味を隠ぁE;
     hideMeaningBtn.classList.toggle('active', hideMeaning);
 
     // Category filter chips
@@ -346,11 +346,11 @@ function renderWords() {
 
         const meaning = document.createElement('div');
         meaning.className = 'word-meaning';
-        meaning.textContent = hideMeaning ? '？　(意味)' : w.meaning;
+        meaning.textContent = hideMeaning ? '�E�　(意味)' : (w.myanmar || w.meaning);
         // Click a card to reveal/toggle its Burmese meaning
         card.onclick = () => {
             if (!hideMeaning) return;
-            meaning.textContent = w.meaning;
+            meaning.textContent = w.myanmar || w.meaning;
             card.classList.add('revealed');
         };
         meaningWrap.appendChild(meaning);
@@ -383,12 +383,12 @@ function renderWords() {
         
         const editBtn = document.createElement('button');
         editBtn.className = 'word-action-btn edit';
-        editBtn.textContent = '✏️ 編集';
+        editBtn.textContent = '✏︁E編雁E;
         editBtn.onclick = () => openEditWordModal(idx);
         
         const deleteBtn = document.createElement('button');
         deleteBtn.className = 'word-action-btn delete';
-        deleteBtn.textContent = '🗑️ 削除';
+        deleteBtn.textContent = '🗑�E�E削除';
         deleteBtn.onclick = () => deleteWord(idx);
         
         actions.appendChild(editBtn);
@@ -463,9 +463,9 @@ function renderQuizQuestion() {
     quizAnswered = false;
     const q = quizQuestions[quizCurrent];
     document.getElementById('quizProgress').textContent =
-        `問題 ${quizCurrent + 1} / ${quizQuestions.length}`;
+        `問顁E${quizCurrent + 1} / ${quizQuestions.length}`;
     document.getElementById('quizPrompt').innerHTML =
-        `<div class="quiz-rule-label">この絵は何のルール？<br><small>この交通ルールを選んでください。</small></div>` +
+        `<div class="quiz-rule-label">こ�E絵は何�Eルール�E�Ebr><small>こ�E交通ルールを選んでください、E/small></div>` +
         `<div style="margin-top:12px">${q.rule.svg}</div>`;
 
     const optGrid = document.getElementById('quizOptions');
@@ -504,8 +504,8 @@ function answerQuiz(btn, chosen) {
     const resultBox = document.getElementById('quizResult');
     resultBox.style.display = 'block';
     resultBox.innerHTML =
-        (answeredCorrect ? '✅ 正解! せいかい!' : `❌ 不正解! ふせいかい（正解: ${correctTitle}）`) +
-        `<br>${correctTitle}：${q.rule.jp}` +
+        (answeredCorrect ? '✁E正解! せいかい!' : `❁E不正解! ふせいかい�E�正解: ${correctTitle}�E�`) +
+        `<br>${correctTitle}�E�E{q.rule.jp}` +
         `<br><span style="opacity:.85">${q.rule.myanmar}</span>`;
 
     const nextBtn = document.getElementById('nextQuizBtn');
@@ -534,10 +534,10 @@ function renderQuizResults() {
     resultBox.innerHTML =
         `<div style="font-size:1.6rem;font-weight:bold;text-align:center;">${quizScore} / ${total} 点 (${pct}%)</div>` +
         (total === 0
-            ? '<div style="text-align:center;margin-top:8px">ルールがありません。</div>'
+            ? '<div style="text-align:center;margin-top:8px">ルールがありません、E/div>'
             : (passed
-                ? '<div style="text-align:center;margin-top:8px">🎉 合格！よくできました！また練習を続けましょう。</div>'
-                : '<div style="text-align:center;margin-top:8px">😅 合格には 90% 以上が目安です。あと少し！また挑戦しましょう。</div>'));
+                ? '<div style="text-align:center;margin-top:8px">🎉 合格�E�よくできました�E�また練習を続けましょぁE��E/div>'
+                : '<div style="text-align:center;margin-top:8px">�E 合格には 90% 以上が目安です。あと少し�E�また挑戦しましょぁE��E/div>'));
     document.getElementById('restartQuizBtn').style.display = 'block';
     document.getElementById('nextQuizBtn').style.display = 'none';
 }
@@ -630,7 +630,7 @@ async function loadWords() {
                     category: w.category
                 }));
                 useDatabase = true;
-                console.log(`✅ Using ${allWords.length} words from database`);
+                console.log(`✁EUsing ${allWords.length} words from database`);
             } else {
                 // Database is empty, seed it with local data
                 console.log('Database empty, seeding with local data...');
@@ -720,7 +720,7 @@ function openEditWordModal(wordIndex) {
         document.getElementById('wordReading').value = word.reading;
         document.getElementById('wordMyanmar').value = word.myanmar;
         document.getElementById('wordCategory').value = word.category;
-        title.textContent = '単語を編集';
+        title.textContent = '単語を編雁E;
         modal.classList.add('active');
     }
 }
@@ -768,14 +768,14 @@ async function saveWord(event) {
         if (wordId) {
             // Edit
             allWords[wordId] = { ...allWords[wordId], ...wordData };
-            alert('単語を更新しました（ローカル）');
+            alert('単語を更新しました�E�ローカル�E�E);
         } else {
             // Add
             allWords.push({
                 id: `local_${Date.now()}`,
                 ...wordData
             });
-            alert('単語を追加しました（ローカル）');
+            alert('単語を追加しました�E�ローカル�E�E);
         }
         wordOrder = allWords.map((_, i) => i);
         renderWords();
@@ -788,7 +788,7 @@ async function deleteWord(wordIndex) {
     const word = allWords[wordIndex];
     if (!word) return;
     
-    if (!confirm(`「${word.word}」を削除しますか？`)) {
+    if (!confirm(`、E{word.word}」を削除しますか�E�`)) {
         return;
     }
     
@@ -805,7 +805,7 @@ async function deleteWord(wordIndex) {
         allWords.splice(wordIndex, 1);
         wordOrder = allWords.map((_, i) => i);
         renderWords();
-        alert('削除しました（ローカル）');
+        alert('削除しました�E�ローカル�E�E);
     }
 }
 
