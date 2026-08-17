@@ -384,12 +384,12 @@ function renderWords() {
         const editBtn = document.createElement('button');
         editBtn.className = 'word-action-btn edit';
         editBtn.textContent = '✏️ 編集';
-        editBtn.onclick = () => openEditWordModal(i);
+        editBtn.onclick = () => openEditWordModal(idx);
         
         const deleteBtn = document.createElement('button');
         deleteBtn.className = 'word-action-btn delete';
         deleteBtn.textContent = '🗑️ 削除';
-        deleteBtn.onclick = () => deleteWord(i);
+        deleteBtn.onclick = () => deleteWord(idx);
         
         actions.appendChild(editBtn);
         actions.appendChild(deleteBtn);
