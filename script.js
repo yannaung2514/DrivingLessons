@@ -27,9 +27,15 @@ const favBtn          = document.getElementById('favBtn');
 const favChips        = document.getElementById('favChips');
 const favCount        = document.getElementById('favCount');
 const studySection    = document.getElementById('studySection');
+const wordSection     = document.getElementById('wordSection');
 const quizSection     = document.getElementById('quizSection');
 const studyTab        = document.getElementById('studyTab');
+const wordTab         = document.getElementById('wordTab');
 const quizTab         = document.getElementById('quizTab');
+const wordCount       = document.getElementById('wordCount');
+const wordGrid        = document.getElementById('wordGrid');
+const categoryNote    = document.getElementById('categoryNote');
+const hideMeaningBtn  = document.getElementById('hideMeaningBtn');
 
 // ---------------------------------------------------------------------
 // localStorage helpers
@@ -74,6 +80,20 @@ function viewedSet() {
 if (!allRules.length && typeof trafficRulesData !== 'undefined') {
     allRules = trafficRulesData.slice();
 }
+
+// ---- Vocabulary (words) data & state ----
+let allWords = (window.trafficWordData || []).slice();
+let wordOrder = [];            // display order (indices)
+let hideMeaning = false;       // hide Burmese meanings for self-testing
+let activeCategory = 'all';    // filter category
+const WORD_HIDE_KEY = 'trafficWordsHideMean';
+
+if (!allWords.length && typeof trafficWordData !== 'undefined') {
+    allWords = trafficWordData.slice();
+}
+wordOrder = allWords.map((_, i) => i);
+hideMeaning = localStorage.getItem(WORD_HIDE_KEY) === '1';
+
 // ---------------------------------------------------------------------
 // Rendering
 // ---------------------------------------------------------------------
@@ -175,11 +195,88 @@ function clearFavorites() {
 // ---------------------------------------------------------------------
 function showMode(mode) {
     const isStudy = mode === 'study';
+    const isWords = mode === 'words';
+    const isQuiz = mode === 'quiz';
     studySection.style.display = isStudy ? 'block' : 'none';
-    quizSection.style.display = isStudy ? 'none' : 'block';
+    wordSection.style.display = isWords ? 'block' : 'none';
+    quizSection.style.display = isQuiz ? 'block' : 'none';
     studyTab.classList.toggle('active', isStudy);
-    quizTab.classList.toggle('active', !isStudy);
-    if (!isStudy) startQuiz();
+    wordTab.classList.toggle('active', isWords);
+    quizTab.classList.toggle('active', isQuiz);
+    if (isWords) renderWords();
+    if (isQuiz) startQuiz();
+}
+
+// ---------------------------------------------------------------------
+// Vocabulary (words) rendering
+// ---------------------------------------------------------------------
+function renderWords() {
+    wordCount.textContent = `${allWords.length} 言葉`;
+    hideMeaningBtn.textContent = hideMeaning ? '🙉 意味を見る' : '🙈 意味を隠す';
+    hideMeaningBtn.classList.toggle('active', hideMeaning);
+
+    // Category filter chips
+    const cats = ['all', ...new Set(allWords.map(w => w.category))];
+    categoryNote.innerHTML = '';
+    cats.forEach(cat => {
+        const chip = document.createElement('button');
+        chip.className = 'cat-chip' + (activeCategory === cat ? ' active' : '');
+        chip.textContent = cat === 'all' ? 'すべて' : cat;
+        chip.onclick = () => {
+            activeCategory = cat;
+            wordOrder = shuffle(allWords.map((_, i) => i));
+            renderWords();
+        };
+        categoryNote.appendChild(chip);
+    });
+
+    wordGrid.innerHTML = '';
+    wordOrder.forEach(idx => {
+        const w = allWords[idx];
+        if (activeCategory !== 'all' && w.category !== activeCategory) return;
+        const card = document.createElement('div');
+        card.className = 'word-card';
+        card.dataset.idx = idx;
+
+        const reading = document.createElement('div');
+        reading.className = 'word-reading';
+        reading.textContent = w.reading;
+
+        const word = document.createElement('div');
+        word.className = 'word-char';
+        word.textContent = w.word;
+
+        const meaning = document.createElement('div');
+        meaning.className = 'word-meaning';
+        meaning.textContent = hideMeaning ? '？　(意味)' : w.meaning;
+        // Click a card to reveal/toggle its Burmese meaning
+        card.onclick = () => {
+            if (!hideMeaning) return;
+            meaning.textContent = w.meaning;
+            card.classList.add('revealed');
+        };
+
+        const cat = document.createElement('div');
+        cat.className = 'word-cat';
+        cat.textContent = w.category;
+
+        card.appendChild(cat);
+        card.appendChild(reading);
+        card.appendChild(word);
+        card.appendChild(meaning);
+        wordGrid.appendChild(card);
+    });
+}
+
+function toggleHideMeaning() {
+    hideMeaning = !hideMeaning;
+    try { localStorage.setItem(WORD_HIDE_KEY, hideMeaning ? '1' : '0'); } catch (e) { /* ignore */ }
+    renderWords();
+}
+
+function shuffleWords() {
+    wordOrder = shuffle(allWords.map((_, i) => i));
+    renderWords();
 }
 // ---------------------------------------------------------------------
 // Quiz (practice test)

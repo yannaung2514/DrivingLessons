@@ -22,8 +22,9 @@
 
     <!-- Mode tabs -->
     <div class="mode-tabs">
-        <button class="mode-tab active" id="studyTab" onclick="showMode('study')">📖 勉強 Study</button>
-        <button class="mode-tab" id="quizTab" onclick="showMode('quiz')">📝 練習テスト Practice</button>
+        <button class="mode-tab active" id="studyTab" onclick="showMode('study')">📖 ルール Rules</button>
+        <button class="mode-tab" id="wordTab" onclick="showMode('words')">🔤 言葉 Words</button>
+        <button class="mode-tab" id="quizTab" onclick="showMode('quiz')">📝 テスト Test</button>
     </div>
 
     <!-- Flashcard (Study mode) -->
@@ -60,6 +61,19 @@
         </div>
     </section>
 
+    <!-- Words (Vocabulary) section -->
+    <section id="wordSection" style="display:none;">
+        <div class="word-toolbar">
+            <span id="wordCount" class="word-count">0 言葉</span>
+            <div style="display:flex;gap:8px;">
+                <button class="btn small-btn" id="hideMeaningBtn" onclick="toggleHideMeaning()">🙈 意味を隠す</button>
+                <button class="btn small-btn accent2" onclick="shuffleWords()">🔀 シャッフル</button>
+            </div>
+        </div>
+        <div class="category-note" id="categoryNote"></div>
+        <div class="word-grid" id="wordGrid"></div>
+    </section>
+
     <!-- Favorites list -->
     <div id="favSection" style="margin-top: 25px; border-top: 2px solid #e5e7eb; padding-top: 20px;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
@@ -71,6 +85,8 @@
 </div>
 
 <script src="rulesdata.js"></script>
+    <script src="trafficwords.js"></script>
+
 <script src="script.js"></script>
 </body>
 </html>
