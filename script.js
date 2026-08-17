@@ -1,4 +1,4 @@
-// ============================================================
+﻿// ============================================================
 // 日本の交通ルール 学習アプリ - script.js
 // Flashcard study mode + practice quiz mode.
 // Data comes from rulesdata.js (window.trafficRulesData).
@@ -386,13 +386,7 @@ function renderWords() {
         editBtn.textContent = '✏編集';
         editBtn.onclick = () => openEditWordModal(idx);
         
-        const deleteBtn = document.createElement('button');
-        deleteBtn.className = 'word-action-btn delete';
-        deleteBtn.textContent = '🗑削除';
-        deleteBtn.onclick = () => deleteWord(idx);
-        
         actions.appendChild(editBtn);
-        actions.appendChild(deleteBtn);
         card.appendChild(actions);
         
         wordGrid.appendChild(card);
@@ -787,29 +781,5 @@ async function saveWord(event) {
     closeWordModal();
 }
 
-async function deleteWord(wordIndex) {
-    const word = allWords[wordIndex];
-    if (!word) return;
-    
-    if (!confirm(`、E{word.word}」を削除しますか�E�E�E�`)) {
-        return;
-    }
-    
-    if (useDatabase && window.supabaseConfigured) {
-        const success = await deleteWordFromDatabase(word.id);
-        if (success) {
-            alert('削除しました');
-            await loadWords();
-        } else {
-            alert('削除に失敗しました');
-        }
-    } else {
-        // Local storage fallback
-        allWords.splice(wordIndex, 1);
-        wordOrder = allWords.map((_, i) => i);
-        renderWords();
-        alert('削除しましたローカル');
-    }
-}
 
 init();

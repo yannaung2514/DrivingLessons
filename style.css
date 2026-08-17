@@ -804,12 +804,3 @@ header p {
     border-color: #2563eb;
 }
 
-.word-action-btn.delete {
-    color: #dc2626;
-}
-
-.word-action-btn.delete:hover {
-    background: #fee2e2;
-    border-color: #dc2626;
-}
-
