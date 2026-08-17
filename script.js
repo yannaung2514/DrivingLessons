@@ -82,9 +82,10 @@ if (!allRules.length && typeof trafficRulesData !== 'undefined') {
 }
 
 // ---- Vocabulary (words) data & state ----
-let allWords = (window.trafficWordData || []).slice();
-let wordOrder = [];            // display order (indices)
-let hideMeaning = false;       // hide Burmese meanings for self-testing
+let allWords = [];  // Will be loaded from database or fallback to trafficwords.js
+let wordOrder = [];
+let hideMeaning = false;
+let useDatabase = false;  // Flag to track if we're using database
 let activeCategory = 'all';    // filter category
 const WORD_HIDE_KEY = 'trafficWordsHideMean';
 
@@ -375,6 +376,25 @@ function renderWords() {
         card.appendChild(reading);
         card.appendChild(word);
         card.appendChild(meaningWrap);
+        
+        // Add edit/delete buttons
+        const actions = document.createElement('div');
+        actions.className = 'word-actions';
+        
+        const editBtn = document.createElement('button');
+        editBtn.className = 'word-action-btn edit';
+        editBtn.textContent = '✏️ 編集';
+        editBtn.onclick = () => openEditWordModal(i);
+        
+        const deleteBtn = document.createElement('button');
+        deleteBtn.className = 'word-action-btn delete';
+        deleteBtn.textContent = '🗑️ 削除';
+        deleteBtn.onclick = () => deleteWord(i);
+        
+        actions.appendChild(editBtn);
+        actions.appendChild(deleteBtn);
+        card.appendChild(actions);
+        
         wordGrid.appendChild(card);
     });
 }
@@ -539,12 +559,15 @@ document.addEventListener('keydown', (e) => {
 // ---------------------------------------------------------------------
 // Init
 // ---------------------------------------------------------------------
-function init() {
+async function init() {
     loadFavorites();
     loadPhotos();
     order = allRules.map((_, i) => i);
     currentIndex = 0;
     renderCurrent();
+
+    // Load words from database if Supabase is configured
+    await loadWords();
 
     // Handle photo upload from the hidden file input
     const inp = document.getElementById('wordPhotoInput');
@@ -557,6 +580,13 @@ function init() {
                 downscaleImage(reader.result, 360, async (dataUrl) => {
                     // Use Supabase or localStorage
                     await savePhoto(photoTargetWord, dataUrl);
+                    
+                    // If using database, update the word's photo_url
+                    if (useDatabase && typeof photoTargetWord === 'string' && photoTargetWord.startsWith('db-')) {
+                        const wordId = photoTargetWord.replace('db-', '');
+                        await updateWordInDatabase(wordId, { photo_url: wordPhotos[photoTargetWord] });
+                    }
+                    
                     renderWords();
                 });
             };
@@ -583,6 +613,69 @@ function init() {
 }
 
 // ---------------------------------------------------------------------
+// Load words from database or fallback to local data
+// ---------------------------------------------------------------------
+async function loadWords() {
+    if (window.supabaseConfigured) {
+        // Wait for Supabase client to initialize
+        let attempts = 0;
+        while (!supabaseClient && attempts < 50) {
+            await new Promise(resolve => setTimeout(resolve, 100));
+            attempts++;
+        }
+
+        if (supabaseClient) {
+            const dbWords = await fetchWordsFromDatabase();
+            
+            if (dbWords && dbWords.length > 0) {
+                // Use database words
+                allWords = dbWords.map(w => ({
+                    id: w.id,
+                    word: w.word,
+                    reading: w.reading,
+                    myanmar: w.myanmar,
+                    category: w.category,
+                    photo_url: w.photo_url
+                }));
+                useDatabase = true;
+                console.log(`✅ Using ${allWords.length} words from database`);
+            } else {
+                // Database is empty, seed it with local data
+                console.log('Database empty, seeding with local data...');
+                const localWords = window.trafficWordData || [];
+                const seeded = await seedWordsToDatabase(localWords);
+                
+                if (seeded > 0) {
+                    // Reload from database
+                    const reloaded = await fetchWordsFromDatabase();
+                    if (reloaded) {
+                        allWords = reloaded.map(w => ({
+                            id: w.id,
+                            word: w.word,
+                            reading: w.reading,
+                            myanmar: w.myanmar,
+                            category: w.category,
+                            photo_url: w.photo_url
+                        }));
+                        useDatabase = true;
+                    }
+                }
+            }
+        }
+    }
+
+    // Fallback to local data if database not available
+    if (allWords.length === 0) {
+        allWords = (window.trafficWordData || []).slice();
+        useDatabase = false;
+        console.log(`Using ${allWords.length} words from local data`);
+    }
+
+    wordOrder = allWords.map((_, i) => i);
+    renderWords();
+}
+
+// ---------------------------------------------------------------------
 // Photo modal functions
 // ---------------------------------------------------------------------
 function openPhotoModal(wordId, wordTitle) {
@@ -604,6 +697,125 @@ function closePhotoModal() {
     const modal = document.getElementById('photoModal');
     if (modal) {
         modal.classList.remove('active');
+    }
+}
+
+// ---------------------------------------------------------------------
+// Word management modal functions
+// ---------------------------------------------------------------------
+function openAddWordModal() {
+    const modal = document.getElementById('wordModal');
+    const title = document.getElementById('wordModalTitle');
+    const form = document.getElementById('wordForm');
+    
+    if (modal && title && form) {
+        form.reset();
+        document.getElementById('wordId').value = '';
+        title.textContent = '単語を追加';
+        modal.classList.add('active');
+    }
+}
+
+function openEditWordModal(wordIndex) {
+    const word = allWords[wordIndex];
+    if (!word) return;
+    
+    const modal = document.getElementById('wordModal');
+    const title = document.getElementById('wordModalTitle');
+    
+    if (modal && title) {
+        document.getElementById('wordId').value = wordIndex;
+        document.getElementById('wordKanji').value = word.word;
+        document.getElementById('wordReading').value = word.reading;
+        document.getElementById('wordMyanmar').value = word.myanmar;
+        document.getElementById('wordCategory').value = word.category;
+        title.textContent = '単語を編集';
+        modal.classList.add('active');
+    }
+}
+
+function closeWordModal() {
+    const modal = document.getElementById('wordModal');
+    if (modal) {
+        modal.classList.remove('active');
+    }
+}
+
+async function saveWord(event) {
+    event.preventDefault();
+    
+    const wordId = document.getElementById('wordId').value;
+    const wordData = {
+        word: document.getElementById('wordKanji').value,
+        reading: document.getElementById('wordReading').value,
+        myanmar: document.getElementById('wordMyanmar').value,
+        category: document.getElementById('wordCategory').value
+    };
+    
+    if (useDatabase && window.supabaseConfigured) {
+        if (wordId) {
+            // Edit existing word
+            const success = await updateWordInDatabase(wordId, wordData);
+            if (success) {
+                alert('単語を更新しました');
+                await loadWords();
+            } else {
+                alert('更新に失敗しました');
+            }
+        } else {
+            // Add new word
+            const success = await insertWordToDatabase(wordData);
+            if (success) {
+                alert('単語を追加しました');
+                await loadWords();
+            } else {
+                alert('追加に失敗しました');
+            }
+        }
+    } else {
+        // Local storage fallback
+        if (wordId) {
+            // Edit
+            allWords[wordId] = { ...allWords[wordId], ...wordData };
+            alert('単語を更新しました（ローカル）');
+        } else {
+            // Add
+            allWords.push({
+                id: `local_${Date.now()}`,
+                ...wordData,
+                photo_url: null
+            });
+            alert('単語を追加しました（ローカル）');
+        }
+        wordOrder = allWords.map((_, i) => i);
+        renderWords();
+    }
+    
+    closeWordModal();
+}
+
+async function deleteWord(wordIndex) {
+    const word = allWords[wordIndex];
+    if (!word) return;
+    
+    if (!confirm(`「${word.word}」を削除しますか？`)) {
+        return;
+    }
+    
+    if (useDatabase && window.supabaseConfigured) {
+        const success = await deleteWordFromDatabase(word.id);
+        if (success) {
+            alert('削除しました');
+            await loadWords();
+        } else {
+            alert('削除に失敗しました');
+        }
+    } else {
+        // Local storage fallback
+        allWords.splice(wordIndex, 1);
+        wordOrder = allWords.map((_, i) => i);
+        renderWords();
+        alert('削除しました（ローカル）');
     }
 }
 

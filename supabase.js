@@ -125,3 +125,166 @@ async function deletePhoto(wordId) {
     delete wordPhotos[wordId];
     savePhotos();
 }
+
+// ============================================================
+// Database Operations for Vocabulary Words
+// ============================================================
+
+/**
+ * Fetch all words from Supabase database
+ * @returns {Promise<Array>} Array of word objects
+ */
+async function fetchWordsFromDatabase() {
+    if (!supabaseClient) {
+        console.warn('Supabase not initialized, using local data');
+        return null;
+    }
+
+    try {
+        const { data, error } = await supabaseClient
+            .from('traffic_words')
+            .select('*')
+            .order('category', { ascending: true })
+            .order('word', { ascending: true });
+
+        if (error) throw error;
+
+        console.log(`✅ Fetched ${data.length} words from database`);
+        return data;
+    } catch (error) {
+        console.error('Failed to fetch words from database:', error);
+        return null;
+    }
+}
+
+/**
+ * Insert a new word into the database
+ * @param {Object} wordObj - { word, reading, myanmar, category, photo_url }
+ * @returns {Promise<Object|null>} Inserted word or null
+ */
+async function insertWordToDatabase(wordObj) {
+    if (!supabaseClient) {
+        console.warn('Supabase not initialized');
+        return null;
+    }
+
+    try {
+        const { data, error } = await supabaseClient
+            .from('traffic_words')
+            .insert([wordObj])
+            .select()
+            .single();
+
+        if (error) throw error;
+
+        console.log('✅ Word inserted to database:', data.word);
+        return data;
+    } catch (error) {
+        console.error('Failed to insert word:', error);
+        return null;
+    }
+}
+
+/**
+ * Update a word in the database
+ * @param {string} id - Word ID
+ * @param {Object} updates - Fields to update
+ * @returns {Promise<Object|null>} Updated word or null
+ */
+async function updateWordInDatabase(id, updates) {
+    if (!supabaseClient) {
+        console.warn('Supabase not initialized');
+        return null;
+    }
+
+    try {
+        const { data, error } = await supabaseClient
+            .from('traffic_words')
+            .update(updates)
+            .eq('id', id)
+            .select()
+            .single();
+
+        if (error) throw error;
+
+        console.log('✅ Word updated in database:', data.word);
+        return data;
+    } catch (error) {
+        console.error('Failed to update word:', error);
+        return null;
+    }
+}
+
+/**
+ * Delete a word from the database
+ * @param {string} id - Word ID
+ * @returns {Promise<boolean>} Success status
+ */
+async function deleteWordFromDatabase(id) {
+    if (!supabaseClient) {
+        console.warn('Supabase not initialized');
+        return false;
+    }
+
+    try {
+        const { error } = await supabaseClient
+            .from('traffic_words')
+            .delete()
+            .eq('id', id);
+
+        if (error) throw error;
+
+        console.log('✅ Word deleted from database');
+        return true;
+    } catch (error) {
+        console.error('Failed to delete word:', error);
+        return false;
+    }
+}
+
+/**
+ * Seed initial words to database (one-time setup)
+ * @param {Array} words - Array of word objects from trafficwords.js
+ * @returns {Promise<number>} Number of words inserted
+ */
+async function seedWordsToDatabase(words) {
+    if (!supabaseClient) {
+        console.warn('Supabase not initialized');
+        return 0;
+    }
+
+    try {
+        // Check if database already has words
+        const { data: existing } = await supabaseClient
+            .from('traffic_words')
+            .select('id')
+            .limit(1);
+
+        if (existing && existing.length > 0) {
+            console.log('Database already has words, skipping seed');
+            return 0;
+        }
+
+        // Insert all words
+        const wordsToInsert = words.map(w => ({
+            word: w.word,
+            reading: w.reading,
+            myanmar: w.myanmar,
+            category: w.category,
+            photo_url: null
+        }));
+
+        const { data, error } = await supabaseClient
+            .from('traffic_words')
+            .insert(wordsToInsert)
+            .select();
+
+        if (error) throw error;
+
+        console.log(`✅ Seeded ${data.length} words to database`);
+        return data.length;
+    } catch (error) {
+        console.error('Failed to seed words:', error);
+        return 0;
+    }
+}

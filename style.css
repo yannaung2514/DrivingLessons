@@ -726,3 +726,90 @@ header p {
     text-decoration: underline;
 }
 
+/* ---- Word management modal ---- */
+.word-modal-content {
+    position: relative;
+    background: #fff;
+    border-radius: 12px;
+    padding: 30px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    animation: scaleIn 0.25s ease;
+    max-width: 500px;
+    width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.word-modal-content h3 {
+    margin: 0 0 20px 0;
+    color: var(--primary);
+    font-size: 1.3rem;
+}
+
+.form-group {
+    margin-bottom: 18px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 6px;
+    font-weight: 600;
+    color: var(--text-main);
+    font-size: 0.95rem;
+}
+
+.form-group input {
+    width: 100%;
+    padding: 10px 12px;
+    border: 2px solid #e5e7eb;
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: border-color 0.2s;
+}
+
+.form-group input:focus {
+    outline: none;
+    border-color: var(--primary);
+}
+
+/* ---- Word card action buttons ---- */
+.word-actions {
+    display: flex;
+    gap: 6px;
+    margin-top: 8px;
+    justify-content: flex-end;
+}
+
+.word-action-btn {
+    background: #f3f4f6;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    padding: 4px 10px;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.word-action-btn:hover {
+    background: #e5e7eb;
+    transform: translateY(-1px);
+}
+
+.word-action-btn.edit {
+    color: #2563eb;
+}
+
+.word-action-btn.edit:hover {
+    background: #dbeafe;
+    border-color: #2563eb;
+}
+
+.word-action-btn.delete {
+    color: #dc2626;
+}
+
+.word-action-btn.delete:hover {
+    background: #fee2e2;
+    border-color: #dc2626;
+}
+

@@ -68,6 +68,7 @@
             <div style="display:flex;gap:8px;">
                 <button class="btn small-btn" id="hideMeaningBtn" onclick="toggleHideMeaning()">🙈 意味を隠す</button>
                 <button class="btn small-btn accent2" onclick="shuffleWords()">🔀 シャッフル</button>
+                <button class="btn small-btn accent" id="addWordBtn" onclick="openAddWordModal()">➕ 追加</button>
             </div>
         </div>
         <div class="category-note" id="categoryNote"></div>
@@ -82,6 +83,51 @@
             <button class="photo-modal-close" onclick="closePhotoModal()" title="閉じる">✕</button>
             <img id="photoModalImg" src="" alt="photo">
             <div id="photoModalCaption" class="photo-modal-caption"></div>
+        </div>
+    </div>
+
+    <!-- Add/Edit Word modal -->
+    <div id="wordModal" class="photo-modal" onclick="closeWordModal()">
+        <div class="word-modal-content" onclick="event.stopPropagation()">
+            <button class="photo-modal-close" onclick="closeWordModal()" title="閉じる">✕</button>
+            <h3 id="wordModalTitle">単語を追加</h3>
+            <form id="wordForm" onsubmit="saveWord(event)">
+                <input type="hidden" id="wordId" value="">
+                <div class="form-group">
+                    <label for="wordKanji">漢字 (Kanji):</label>
+                    <input type="text" id="wordKanji" required placeholder="例: 信号">
+                </div>
+                <div class="form-group">
+                    <label for="wordReading">ひらがな (Reading):</label>
+                    <input type="text" id="wordReading" required placeholder="例: しんごう">
+                </div>
+                <div class="form-group">
+                    <label for="wordMyanmar">မြန်မာ (Myanmar):</label>
+                    <input type="text" id="wordMyanmar" required placeholder="例: မီးပွိုင့်">
+                </div>
+                <div class="form-group">
+                    <label for="wordCategory">カテゴリー (Category):</label>
+                    <input type="text" id="wordCategory" required placeholder="例: 信号" list="categoryList">
+                    <datalist id="categoryList">
+                        <option value="信号">
+                        <option value="交差点">
+                        <option value="標識">
+                        <option value="停止・駐車">
+                        <option value="歩行者">
+                        <option value="速度">
+                        <option value="道路">
+                        <option value="車両">
+                        <option value="運転">
+                        <option value="免許">
+                        <option value="安全">
+                        <option value="事故">
+                        <option value="高速道路">
+                        <option value="踏切・道路">
+                        <option value="天候">
+                    </datalist>
+                </div>
+                <button type="submit" class="btn">保存</button>
+            </form>
         </div>
     </div>
 
