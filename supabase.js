@@ -282,7 +282,7 @@ async function seedWordsToDatabase(words) {
         const wordsToInsert = words.map(w => ({
             word: w.word,
             reading: w.reading,
-            myanmar: w.myanmar,
+            myanmar: w.meaning,  // Map 'meaning' from trafficwords.js to 'myanmar' in database
             category: w.category
         }));
 
