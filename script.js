@@ -124,11 +124,10 @@ function pickPhoto(word) {
     if (inp) { inp.value = ''; inp.click(); }
 }
 
-function togglePhoto(word) {
+async function togglePhoto(word) {
     if (wordPhotos[word]) {
         if (confirm('この単語の画像を削除しますか？\nRemove this photo?')) {
-            delete wordPhotos[word];
-            savePhotos();
+            await deletePhoto(word);
             renderWords();
         }
     } else {
@@ -550,14 +549,14 @@ function init() {
     // Handle photo upload from the hidden file input
     const inp = document.getElementById('wordPhotoInput');
     if (inp) {
-        inp.addEventListener('change', () => {
+        inp.addEventListener('change', async () => {
             const file = inp.files && inp.files[0];
             if (!file || !photoTargetWord) return;
             const reader = new FileReader();
-            reader.onload = () => {
-                downscaleImage(reader.result, 360, (dataUrl) => {
-                    wordPhotos[photoTargetWord] = dataUrl;
-                    savePhotos();
+            reader.onload = async () => {
+                downscaleImage(reader.result, 360, async (dataUrl) => {
+                    // Use Supabase or localStorage
+                    await savePhoto(photoTargetWord, dataUrl);
                     renderWords();
                 });
             };
