@@ -35,8 +35,8 @@ async function uploadPhotoToSupabase(wordId, dataUrl) {
     const response = await fetch(dataUrl);
     const blob = await response.blob();
     
-    // Create filename: wordId_timestamp.jpg
-    const filename = `${wordId}_${Date.now()}.jpg`;
+    // Create filename: wordId.jpg (no timestamp, so it's predictable)
+    const filename = `${wordId}.jpg`;
     const filePath = `photos/${filename}`;
 
     // Upload to Supabase Storage
@@ -58,17 +58,32 @@ async function uploadPhotoToSupabase(wordId, dataUrl) {
 }
 
 /**
- * Delete photo from Supabase Storage
- * @param {string} photoUrl - Public URL of the photo
+ * Get photo URL from word ID (constructs URL without database lookup)
+ * @param {string} wordId - The word ID
+ * @returns {string} Public URL of the photo
  */
-async function deletePhotoFromSupabase(photoUrl) {
-    if (!supabaseClient || !photoUrl) return;
-
-    // Extract file path from URL
-    const urlParts = photoUrl.split('/storage/v1/object/public/traffic-photos/');
-    if (urlParts.length < 2) return;
+function getPhotoUrlFromWordId(wordId) {
+    if (!supabaseClient) return null;
     
-    const filePath = urlParts[1];
+    const filename = `${wordId}.jpg`;
+    const filePath = `photos/${filename}`;
+    
+    const { data: urlData } = supabaseClient.storage
+        .from('traffic-photos')
+        .getPublicUrl(filePath);
+    
+    return urlData.publicUrl;
+}
+
+/**
+ * Delete photo from Supabase Storage
+ * @param {string} wordId - The word ID
+ */
+async function deletePhotoFromSupabase(wordId) {
+    if (!supabaseClient || !wordId) return;
+
+    const filename = `${wordId}.jpg`;
+    const filePath = `photos/${filename}`;
 
     const { error } = await supabaseClient.storage
         .from('traffic-photos')
@@ -85,14 +100,14 @@ async function deletePhotoFromSupabase(photoUrl) {
 async function savePhoto(wordId, dataUrl) {
     if (window.supabaseConfigured && supabaseClient) {
         try {
-            // Upload to Supabase
+            // Upload to Supabase Storage
             const publicUrl = await uploadPhotoToSupabase(wordId, dataUrl);
             
             // Save URL to localStorage (for quick access)
             wordPhotos[wordId] = publicUrl;
             savePhotos();
             
-            console.log('✅ Photo uploaded to Supabase');
+            console.log('✅ Photo uploaded to Supabase Storage');
             return publicUrl;
         } catch (error) {
             console.error('Supabase upload failed, falling back to localStorage:', error);
@@ -103,6 +118,26 @@ async function savePhoto(wordId, dataUrl) {
         }
     } else {
         // Use localStorage only
+        wordPhotos[wordId] = dataUrl;
+        savePhotos();
+        return dataUrl;
+    }
+}
+
+/**
+ * Delete photo (Supabase or localStorage)
+ * @param {string} wordId - The word ID
+ */
+async function deletePhoto(wordId) {
+    if (window.supabaseConfigured && supabaseClient) {
+        // Delete from Supabase Storage
+        await deletePhotoFromSupabase(wordId);
+    }
+    
+    // Remove from localStorage
+    delete wordPhotos[wordId];
+    savePhotos();
+}ly
         wordPhotos[wordId] = dataUrl;
         savePhotos();
         return dataUrl;
@@ -159,7 +194,7 @@ async function fetchWordsFromDatabase() {
 
 /**
  * Insert a new word into the database
- * @param {Object} wordObj - { word, reading, myanmar, category, photo_url }
+ * @param {Object} wordObj - { word, reading, myanmar, category }
  * @returns {Promise<Object|null>} Inserted word or null
  */
 async function insertWordToDatabase(wordObj) {
@@ -270,8 +305,7 @@ async function seedWordsToDatabase(words) {
             word: w.word,
             reading: w.reading,
             myanmar: w.myanmar,
-            category: w.category,
-            photo_url: null
+            category: w.category
         }));
 
         const { data, error } = await supabaseClient

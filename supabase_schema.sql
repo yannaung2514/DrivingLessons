@@ -7,7 +7,6 @@ CREATE TABLE IF NOT EXISTS traffic_words (
     reading TEXT NOT NULL,           -- Hiragana (e.g., しんごう)
     myanmar TEXT NOT NULL,           -- Burmese meaning
     category TEXT NOT NULL,          -- Category (e.g., 信号, 交差点)
-    photo_url TEXT,                  -- Supabase Storage URL
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );

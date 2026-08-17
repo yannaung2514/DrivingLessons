@@ -580,13 +580,6 @@ async function init() {
                 downscaleImage(reader.result, 360, async (dataUrl) => {
                     // Use Supabase or localStorage
                     await savePhoto(photoTargetWord, dataUrl);
-                    
-                    // If using database, update the word's photo_url
-                    if (useDatabase && typeof photoTargetWord === 'string' && photoTargetWord.startsWith('db-')) {
-                        const wordId = photoTargetWord.replace('db-', '');
-                        await updateWordInDatabase(wordId, { photo_url: wordPhotos[photoTargetWord] });
-                    }
-                    
                     renderWords();
                 });
             };
@@ -634,8 +627,7 @@ async function loadWords() {
                     word: w.word,
                     reading: w.reading,
                     myanmar: w.myanmar,
-                    category: w.category,
-                    photo_url: w.photo_url
+                    category: w.category
                 }));
                 useDatabase = true;
                 console.log(`✅ Using ${allWords.length} words from database`);
@@ -654,8 +646,7 @@ async function loadWords() {
                             word: w.word,
                             reading: w.reading,
                             myanmar: w.myanmar,
-                            category: w.category,
-                            photo_url: w.photo_url
+                            category: w.category
                         }));
                         useDatabase = true;
                     }
@@ -782,8 +773,7 @@ async function saveWord(event) {
             // Add
             allWords.push({
                 id: `local_${Date.now()}`,
-                ...wordData,
-                photo_url: null
+                ...wordData
             });
             alert('単語を追加しました（ローカル）');
         }
