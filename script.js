@@ -190,7 +190,7 @@ function renderCurrent() {
 function renderFavorites() {
     favCount.textContent = favorites.length;
     if (favorites.length === 0) {
-        favChips.innerHTML = '<span class="empty-note">まだお気に入り�Eありません。カード�E ☁Eを押して追加できます、E/span>';
+        favChips.innerHTML = '<span class="empty-note">まだお気に入りがありません。カードの ☆ を押して追加できます。</span>';
         return;
     }
     favChips.innerHTML = '';
