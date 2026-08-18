@@ -323,13 +323,25 @@ function renderWords() {
             : '画像を追加 (add a photo)';
         photoBtn.onclick = (e) => { e.stopPropagation(); togglePhoto(w.id); };
 
-        // Small thumbnail if a photo already exists for this word
-        let thumb = null;
+        // Small thumbnail (with hover photo tooltip) if a photo already exists
+        let thumbWrap = null;
         if (wordPhotos[w.id]) {
-            thumb = document.createElement('img');
+            thumbWrap = document.createElement('span');
+            thumbWrap.className = 'word-thumb-wrap';
+
+            const thumb = document.createElement('img');
             thumb.className = 'word-thumb';
             thumb.src = wordPhotos[w.id];
             thumb.alt = w.word;
+            thumbWrap.appendChild(thumb);
+
+            const hover = document.createElement('div');
+            hover.className = 'word-photo';
+            const hoverImg = document.createElement('img');
+            hoverImg.src = wordPhotos[w.id];
+            hoverImg.alt = w.word;
+            hover.appendChild(hoverImg);
+            thumbWrap.appendChild(hover);
         }
 
         // Meaning area wrapped so a hover tooltip can show the uploaded photo
@@ -355,22 +367,11 @@ function renderWords() {
         };
         meaningWrap.appendChild(meaning);
 
-        // Hover photo (shown above the meaning when hovering)
-        if (wordPhotos[w.id]) {
-            const hover = document.createElement('div');
-            hover.className = 'word-photo';
-            const hoverImg = document.createElement('img');
-            hoverImg.src = wordPhotos[w.id];
-            hoverImg.alt = w.word;
-            hover.appendChild(hoverImg);
-            meaningWrap.appendChild(hover);
-        }
-
         const cat = document.createElement('div');
         cat.className = 'word-cat';
         cat.textContent = w.category;
 
-        if (thumb) card.appendChild(thumb);
+        if (thumbWrap) card.appendChild(thumbWrap);
         card.appendChild(photoBtn);
         card.appendChild(cat);
         card.appendChild(reading);
@@ -703,28 +704,50 @@ function openAddWordModal() {
     const modal = document.getElementById('wordModal');
     const title = document.getElementById('wordModalTitle');
     const form = document.getElementById('wordForm');
-    
+
     if (modal && title && form) {
         form.reset();
         document.getElementById('wordId').value = '';
+        populateCategorySelect('');
         title.textContent = '単語を追加';
         modal.classList.add('active');
+    }
+}
+
+// Fill the category <select> with all distinct categories from the word list.
+function populateCategorySelect(selected) {
+    const sel = document.getElementById('wordCategory');
+    if (!sel) return;
+    const cats = [];
+    allWords.forEach(w => { if (w.category && !cats.includes(w.category)) cats.push(w.category); });
+    cats.sort();
+    sel.innerHTML = '';
+    cats.forEach(c => {
+        const opt = document.createElement('option');
+        opt.value = c;
+        opt.textContent = c;
+        sel.appendChild(opt);
+    });
+    if (selected && cats.includes(selected)) {
+        sel.value = selected;
+    } else if (cats.length) {
+        sel.value = cats[0];
     }
 }
 
 function openEditWordModal(wordIndex) {
     const word = allWords[wordIndex];
     if (!word) return;
-    
+
     const modal = document.getElementById('wordModal');
     const title = document.getElementById('wordModalTitle');
-    
+
     if (modal && title) {
         document.getElementById('wordId').value = word.id;
         document.getElementById('wordKanji').value = word.word;
         document.getElementById('wordReading').value = word.reading;
         document.getElementById('wordMyanmar').value = word.myanmar;
-        document.getElementById('wordCategory').value = word.category;
+        populateCategorySelect(word.category);
         title.textContent = '単語を編集';
         modal.classList.add('active');
     }

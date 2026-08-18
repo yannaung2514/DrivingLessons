@@ -600,12 +600,18 @@ header p {
     width: 100%;
 }
 
-/* ---- hover photo tooltip (shows above the meaning) ---- */
+/* ---- hover photo tooltip (shows above the photo on hover) ---- */
+.word-thumb-wrap {
+    position: relative;
+    display: inline-block;
+    margin-bottom: 4px;
+}
+
 .word-photo {
     position: absolute;
-    bottom: calc(100% + 10px);
+    top: calc(100% + 10px);
     left: 50%;
-    transform: translateX(-50%) translateY(6px) scale(0.9);
+    transform: translateX(-50%) translateY(-6px) scale(0.9);
     background: #fff;
     border-radius: 6px;
     padding: 6px;
@@ -626,7 +632,7 @@ header p {
     object-fit: cover;
 }
 
-.word-meaning-wrap:hover .word-photo {
+.word-thumb-wrap:hover .word-photo {
     opacity: 1;
     transform: translateX(-50%) translateY(0) scale(1);
 }
