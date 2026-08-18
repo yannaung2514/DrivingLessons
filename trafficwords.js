@@ -195,6 +195,32 @@ const trafficWordData = [
   ,{ word: '雪', reading: 'ゆき', meaning: 'နှင်း', category: '天候' }
   ,{ word: '風', reading: 'かぜ', meaning: 'လေပြင်း', category: '天候' }
   ,{ word: '霧', reading: 'きり', meaning: 'မြူ', category: '天候' }
+  // 規制標識 (Regulatory signs) — 仮免 第3課
+  ,{ word: '規制標識', reading: 'きせいひょうしき', meaning: 'တားမြစ်ဆိုင်းဘုတ်', category: '規制標識' }
+  ,{ word: '注意', reading: 'ちゅうい', meaning: 'သတိထားပါ', category: '規制標識' }
+  ,{ word: '車両通行止め', reading: 'しゃりょうつうこうどめ', meaning: 'ယာဉ်အားလုံးပိတ်', category: '規制標識' }
+  ,{ word: '二輪の自動車以外の自動車通行止め', reading: 'にりんのじどうしゃいがいのじどうしゃつうこうどめ', meaning: 'ဆိုင်ကယ်မဟုတ်သော ကားများပိတ်', category: '規制標識' }
+  ,{ word: '重量制限', reading: 'じゅうりょうせいげん', meaning: 'အလေးချိန်ကန့်သတ်', category: '規制標識' }
+  ,{ word: '高さ制限', reading: 'たかさせいげん', meaning: 'အမြင့်ကန့်သတ်', category: '規制標識' }
+  // 指示標識 (Instruction/priority signs) — 仮免 第3課
+  ,{ word: '指示標識', reading: 'しじひょうしき', meaning: 'လမ်းညွှန်ဆိုင်းဘုတ်', category: '指示標識' }
+  ,{ word: '歩行者専用', reading: 'ほこうしゃせんよう', meaning: 'လူကူးသီးသန့်', category: '指示標識' }
+  ,{ word: '自転車専用', reading: 'じてんしゃせんよう', meaning: 'စက်ဘီးသီးသန့်', category: '指示標識' }
+  ,{ word: '緊急自動車の通行区分', reading: 'きんきゅうじどうしゃのつうこうくぶん', meaning: 'အရေးပေါ်ယာဉ်လမ်းကြောင်း', category: '指示標識' }
+  ,{ word: '徐行', reading: 'じょこう', meaning: 'ဖြည်းဖြည်းမောင်း', category: '指示標識' }
+  // 警戒標識 (Warning signs) — 仮免 第3課
+  ,{ word: '警戒標識', reading: 'けいかいひょうしき', meaning: 'အန္တရာယ်သတိပေးဆိုင်းဘုတ်', category: '警戒標識' }
+  ,{ word: '前方優先道路', reading: 'ぜんぽうゆうせんどうろ', meaning: 'ရှေ့ဦးစားပေးလမ်း', category: '警戒標識' }
+  ,{ word: '横断歩道あり', reading: 'おうだんほどうあり', meaning: 'လူကူးဖြတ်လမ်းရှိ', category: '警戒標識' }
+  ,{ word: '踏切あり', reading: 'ふみきりあり', meaning: 'မီးရထားဖြတ်လမ်းရှိ', category: '警戒標識' }
+  ,{ word: '信号機あり', reading: 'しんごうきあり', meaning: 'မီးပွိုင့်ရှိ', category: '警戒標識' }
+  ,{ word: '歩行者に注意', reading: 'ほこうしゃにちゅうい', meaning: 'လူကူးကိုသတိ', category: '警戒標識' }
+  ,{ word: '路面のすべりやすさ', reading: 'ろめんのすべりやすさ', meaning: 'လမ်းချော်နိုင်', category: '警戒標識' }
+  // 案内標識 (Guide signs) — 仮免 第3課
+  ,{ word: '案内標識', reading: 'あんないひょうしき', meaning: 'လမ်းညွှန်ဆိုင်းဘုတ်', category: '案内標識' }
+  ,{ word: '方面・方向の案内', reading: 'ほうめん・ほうこうのあんない', meaning: 'ဦးတည်ရာလမ်းညွှန်', category: '案内標識' }
+  ,{ word: '距離の案内', reading: 'きょりのあんない', meaning: 'အကွာအဝေးလမ်းညွှန်', category: '案内標識' }
+  ,{ word: '主要地点を示す案内', reading: 'しゅようちてんをしめすあんない', meaning: 'အဓိကနေရာလမ်းညွှန်', category: '案内標識' }
 ];
 
 // Expose globally when loaded as a plain <script>.
