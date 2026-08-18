@@ -54,7 +54,9 @@ async function uploadPhotoToSupabase(wordId, dataUrl) {
         .from('traffic-photos')
         .getPublicUrl(filePath);
 
-    return urlData.publicUrl;
+    // Add a cache-buster so the browser doesn't reuse the OLD photo at this
+    // same URL when the file is overwritten with a new image.
+    return urlData.publicUrl + '?v=' + Date.now();
 }
 
 /**
