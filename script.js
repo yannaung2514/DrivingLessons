@@ -563,6 +563,11 @@ async function init() {
     // Load words from database if Supabase is configured
     await loadWords();
 
+    // Rebuild word->photo mapping from Supabase Storage
+    // (so photos show on new browsers/devices, not just this one's localStorage)
+    await loadPhotosFromSupabase();
+    renderWords();
+
     // Handle photo upload from the hidden file input
     const inp = document.getElementById('wordPhotoInput');
     if (inp) {

@@ -76,6 +76,45 @@ function getPhotoUrlFromWordId(wordId) {
 }
 
 /**
+ * List all photos in the traffic-photos bucket and rebuild the
+ * word->photo mapping (from the <wordId>.jpg filenames).
+ * Photos live only in Storage; this is how we know which words have photos
+ * when the user is on a new browser/device (localStorage is empty).
+ */
+async function loadPhotosFromSupabase() {
+    if (!supabaseClient) return 0;
+
+    try {
+        const { data, error } = await supabaseClient.storage
+            .from('traffic-photos')
+            .list('photos');
+
+        if (error) throw error;
+
+        let count = 0;
+        (data || []).forEach(file => {
+            if (!file || !file.name) return;
+            // Filename is "<wordId>.jpg" -> strip extension to get wordId
+            if (!file.name.toLowerCase().endsWith('.jpg')) return;
+            const wordId = file.name.slice(0, -4);
+            if (!wordId) return;
+            if (wordPhotos[wordId] && wordPhotos[wordId].startsWith('http')) return; // already have it
+            wordPhotos[wordId] = getPhotoUrlFromWordId(wordId);
+            count++;
+        });
+
+        if (count > 0) {
+            savePhotos();
+            console.log(`✅ Loaded ${count} photo(s) from Supabase Storage`);
+        }
+        return count;
+    } catch (error) {
+        console.warn('Could not list photos from Supabase:', error);
+        return 0;
+    }
+}
+
+/**
  * Delete photo from Supabase Storage
  * @param {string} wordId - The word ID
  */
