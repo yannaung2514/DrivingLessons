@@ -810,3 +810,129 @@ header p {
     border-color: #2563eb;
 }
 
+/* ============================================================
+   Cards (single-word study) view
+   ============================================================ */
+.card-study-box {
+    max-width: 460px;
+    margin: 0 auto;
+}
+
+.card-study-topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 14px;
+}
+
+.card-study-card {
+    background: linear-gradient(160deg, #ffffff 0%, #f7f9ff 100%);
+    border: 2px solid #e4e8f3;
+    border-radius: 20px;
+    padding: 26px 20px 22px;
+    text-align: center;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+    cursor: pointer;
+    user-select: none;
+    min-height: 300px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    touch-action: pan-y;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.card-study-card:active {
+    transform: scale(0.99);
+}
+
+.card-study-card.revealed {
+    border-color: var(--success);
+}
+
+.card-study-cat {
+    display: inline-block;
+    padding: 3px 12px;
+    border-radius: 999px;
+    background: #ffedd5;
+    color: #9a3412;
+    font-size: 0.78rem;
+    font-weight: bold;
+    margin-bottom: 14px;
+}
+
+.card-study-word {
+    font-size: 2.4rem;
+    font-weight: bold;
+    color: var(--text-main);
+    line-height: 1.2;
+    margin-bottom: 4px;
+    word-break: break-word;
+}
+
+.card-study-reading {
+    font-size: 1.1rem;
+    color: var(--text-muted);
+    margin-bottom: 18px;
+}
+
+.card-study-meaning {
+    font-size: 1.05rem;
+    color: #0a5c40;
+    line-height: 1.6;
+    font-family: 'Myanmar Text', 'Noto Sans Myanmar', sans-serif;
+    padding: 0 6px;
+    min-height: 2.4rem;
+}
+
+.card-study-card.revealed .card-study-meaning {
+    color: #147a4a;
+    font-weight: 600;
+}
+
+.card-study-photo {
+    margin-top: 20px;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+}
+
+.card-study-photo img {
+    max-width: 100%;
+    max-height: 200px;
+    width: auto;
+    height: auto;
+    border-radius: 10px;
+    border: 2px solid #e3e8f5;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+    object-fit: contain;
+}
+
+.card-study-nav {
+    display: flex;
+    gap: 8px;
+    margin-top: 18px;
+}
+
+.card-study-nav .nav-btn {
+    flex: 1;
+}
+
+.card-study-hint {
+    margin-top: 14px;
+    text-align: center;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    line-height: 1.6;
+}
+
+/* Phone / tablet responsiveness */
+@media (max-width: 480px) {
+    .card-study-word { font-size: 2rem; }
+    .card-study-card { padding: 20px 14px 18px; min-height: 260px; }
+    .card-study-photo img { max-height: 150px; }
+    .card-study-nav { flex-wrap: wrap; }
+    .card-study-nav .nav-btn { flex: 1 1 40%; }
+}
+

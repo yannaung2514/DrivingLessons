@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>日本の交通ルールを学ぼう - Learn Japan Traffic Rules</title>
+    <title>🚦日本の交通ルールを学ぼう - Learn Japan Traffic Rules</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -24,6 +24,7 @@
     <div class="mode-tabs">
         <button class="mode-tab active" id="studyTab" onclick="showMode('study')">📖 ルール Rules</button>
         <button class="mode-tab" id="wordTab" onclick="showMode('words')">🔤 言葉 Words</button>
+        <button class="mode-tab" id="cardTab" onclick="showMode('cards')">🃏 カード Cards</button>
         <button class="mode-tab" id="quizTab" onclick="showMode('quiz')">📝 テスト Test</button>
     </div>
 
@@ -75,6 +76,29 @@
         <div class="word-grid" id="wordGrid"></div>
         <input type="file" id="wordPhotoInput" accept="image/*" style="display:none;" title="画像を選ぶ">
         <div class="word-hint">📷 ボタンで単語に画像を追加できます。意味をクリックすると画像がポップアップ表示されます。<br>Click 📷 to add a photo; click the meaning to see it in a popup.</div>
+    </section>
+
+    <!-- Card (single word study) section -->
+    <section id="cardSection" style="display:none;">
+        <div class="card-study-box">
+            <div class="card-study-topbar">
+                <span id="cardStudyCount" class="word-count">0 / 0</span>
+                <button class="btn small-btn accent2" onclick="shuffleCards()">🔀 シャッフル</button>
+            </div>
+            <div class="card-study-card" id="cardStudyCard" onclick="revealCardMeaning()">
+                <div class="card-study-cat" id="cardStudyCat"></div>
+                <div class="card-study-word" id="cardStudyWord"></div>
+                <div class="card-study-reading" id="cardStudyReading"></div>
+                <div class="card-study-meaning" id="cardStudyMeaning"></div>
+                <div class="card-study-photo" id="cardStudyPhoto"></div>
+            </div>
+            <div class="card-study-nav">
+                <button class="btn nav-btn" onclick="prevCard()">◀ 前へ</button>
+                <button class="btn nav-btn accent" onclick="addCurrentCardFav()">⭐ お気に入り</button>
+                <button class="btn nav-btn" onclick="nextCard()">次へ ▶</button>
+            </div>
+            <div class="card-study-hint">タップで意味を表示 / 左右スワイプで移動 (swipe or arrows to navigate)</div>
+        </div>
     </section>
 
     <!-- Photo popup modal -->

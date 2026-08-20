@@ -36,6 +36,8 @@ const wordCount       = document.getElementById('wordCount');
 const wordGrid        = document.getElementById('wordGrid');
 const categoryNote    = document.getElementById('categoryNote');
 const hideMeaningBtn  = document.getElementById('hideMeaningBtn');
+const cardTab         = document.getElementById('cardTab');
+const cardSection     = document.getElementById('cardSection');
 
 // ---------------------------------------------------------------------
 // localStorage helpers
@@ -262,14 +264,18 @@ function showMode(mode) {
     const isStudy = mode === 'study';
     const isWords = mode === 'words';
     const isQuiz = mode === 'quiz';
+    const isCards = mode === 'cards';
     studySection.style.display = isStudy ? 'block' : 'none';
     wordSection.style.display = isWords ? 'block' : 'none';
     quizSection.style.display = isQuiz ? 'block' : 'none';
+    cardSection.style.display = isCards ? 'block' : 'none';
     studyTab.classList.toggle('active', isStudy);
     wordTab.classList.toggle('active', isWords);
     quizTab.classList.toggle('active', isQuiz);
+    cardTab.classList.toggle('active', isCards);
     if (isWords) renderWords();
     if (isQuiz) startQuiz();
+    if (isCards) initCards();
 }
 
 // ---------------------------------------------------------------------
@@ -403,6 +409,115 @@ function toggleHideMeaning() {
 function shuffleWords() {
     wordOrder = shuffle(allWords.map((_, i) => i));
     renderWords();
+}
+
+// ---------------------------------------------------------------------
+// Cards (single-word study view)
+// ---------------------------------------------------------------------
+let cardOrder = [];
+let cardIndex = 0;
+let cardRevealed = false;
+let cardTouchX = null;
+
+function initCards() {
+    if (cardOrder.length === 0 || cardOrder.length !== allWords.length) {
+        cardOrder = allWords.map((_, i) => i);
+    }
+    if (cardIndex >= cardOrder.length) cardIndex = 0;
+    cardRevealed = false;
+    renderCard();
+}
+
+function renderCard() {
+    const count = document.getElementById('cardStudyCount');
+    const catEl = document.getElementById('cardStudyCat');
+    const wordEl = document.getElementById('cardStudyWord');
+    const readEl = document.getElementById('cardStudyReading');
+    const meaningEl = document.getElementById('cardStudyMeaning');
+    const photoEl = document.getElementById('cardStudyPhoto');
+    if (count) count.textContent = `${cardIndex + 1} / ${cardOrder.length}`;
+
+    const w = allWords[cardOrder[cardIndex]];
+    if (!w) return;
+
+    const card = document.getElementById('cardStudyCard');
+    if (card) {
+        card.classList.remove('revealed');
+        cardRevealed = false;
+    }
+
+    if (catEl) catEl.textContent = w.category;
+    if (wordEl) wordEl.textContent = w.word;
+    if (readEl) readEl.textContent = w.reading;
+    if (meaningEl) meaningEl.textContent = '　(意味をタップ) 　Tap to show meaning';
+
+    // Photo below the text if one exists
+    if (photoEl) {
+        photoEl.innerHTML = '';
+        const url = wordPhotos[w.id];
+        if (url) {
+            const img = document.createElement('img');
+            img.src = url;
+            img.alt = w.word;
+            photoEl.appendChild(img);
+        } else if (w.photo_url) {
+            const img = document.createElement('img');
+            img.src = w.photo_url;
+            img.alt = w.word;
+            photoEl.appendChild(img);
+        }
+    }
+}
+
+function revealCardMeaning() {
+    const w = allWords[cardOrder[cardIndex]];
+    if (!w) return;
+    const card = document.getElementById('cardStudyCard');
+    const meaningEl = document.getElementById('cardStudyMeaning');
+    if (meaningEl) meaningEl.textContent = w.myanmar || w.meaning;
+    if (card) {
+        card.classList.add('revealed');
+        cardRevealed = true;
+    }
+}
+
+function cardGoto(i) {
+    if (cardOrder.length === 0) return;
+    cardIndex = ((i % cardOrder.length) + cardOrder.length) % cardOrder.length;
+    cardRevealed = false;
+    renderCard();
+}
+
+function nextCard() { cardGoto(cardIndex + 1); }
+function prevCard() { cardGoto(cardIndex - 1); }
+
+function shuffleCards() {
+    cardOrder = shuffle(allWords.map((_, i) => i));
+    cardIndex = 0;
+    cardRevealed = false;
+    renderCard();
+}
+
+function addCurrentCardFav() {
+    const w = allWords[cardOrder[cardIndex]];
+    if (!w || !w.word) return;
+    if (!favorites.includes(w.word)) {
+        favorites.push(w.word);
+        saveFavorites();
+    }
+    alert('お気に入りに追加しました (added to favorites)');
+}
+
+// Swipe support (touch)
+function cardSwipeStart(x) { cardTouchX = x; }
+function cardSwipeEnd(x) {
+    if (cardTouchX === null || x === null) return;
+    const dx = x - cardTouchX;
+    if (Math.abs(dx) > 40) {
+        if (dx < 0) nextCard();
+        else prevCard();
+    }
+    cardTouchX = null;
 }
 // ---------------------------------------------------------------------
 // Quiz (practice test)
@@ -602,7 +717,23 @@ async function init() {
         if (e.key === 'Escape') {
             closePhotoModal();
         }
+        // Arrow keys navigate the card study view when it's visible
+        if (cardSection.style.display === 'block') {
+            if (e.key === 'ArrowRight') { e.preventDefault(); nextCard(); }
+            else if (e.key === 'ArrowLeft') { e.preventDefault(); prevCard(); }
+        }
     });
+
+    // Touch swipe for the card study view (phone/tablet)
+    const cardEl = document.getElementById('cardStudyCard');
+    if (cardEl) {
+        cardEl.addEventListener('touchstart', (e) => {
+            cardSwipeStart(e.touches[0].clientX);
+        }, { passive: true });
+        cardEl.addEventListener('touchend', (e) => {
+            cardSwipeEnd(e.changedTouches[0].clientX);
+        }, { passive: true });
+    }
 }
 
 // ---------------------------------------------------------------------
