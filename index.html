@@ -83,14 +83,24 @@
         <div class="card-study-box">
             <div class="card-study-topbar">
                 <span id="cardStudyCount" class="word-count">0 / 0</span>
-                <button class="btn small-btn accent2" onclick="shuffleCards()">🔀 シャッフル</button>
+                <div style="display:flex;gap:6px;">
+                    <button class="btn small-btn accent" onclick="openAddWordModal()">➕ 追加</button>
+                    <button class="btn small-btn accent2" onclick="shuffleCards()">🔀 シャッフル</button>
+                </div>
             </div>
             <div class="card-study-card" id="cardStudyCard">
-                <div class="card-study-cat" id="cardStudyCat"></div>
+                <div class="card-study-top">
+                    <span class="card-study-cat" id="cardStudyCat"></span>
+                    <span class="card-study-index" id="cardStudyIndex"></span>
+                </div>
                 <div class="card-study-word" id="cardStudyWord"></div>
                 <div class="card-study-reading" id="cardStudyReading"></div>
+                <div class="card-study-divider"></div>
+                <div class="card-study-meaning-label">意味・Meaning</div>
                 <div class="card-study-meaning" id="cardStudyMeaning"></div>
-                <div class="card-study-photo" id="cardStudyPhoto"></div>
+                <div class="card-study-photo-zone">
+                    <div class="card-study-photo" id="cardStudyPhoto"></div>
+                </div>
             </div>
             <div class="card-study-nav">
                 <button class="btn nav-btn" onclick="prevCard()">◀ 前へ</button>

@@ -447,24 +447,40 @@ function renderCard() {
     }
 
     if (catEl) catEl.textContent = w.category;
+    const idxEl = document.getElementById('cardStudyIndex');
+    if (idxEl) idxEl.textContent = `${cardIndex + 1} / ${cardOrder.length}`;
     if (wordEl) wordEl.textContent = w.word;
     if (readEl) readEl.textContent = w.reading;
     if (meaningEl) meaningEl.textContent = w.myanmar || w.meaning;
 
-    // Photo below the text if one exists
+    // Photo zone: always render a fixed-size area so the card frame stays
+    // constant whether or not there is a photo (あり / なし).
+    const statusEl = document.getElementById('cardStudyPhotoStatus');
+    if (photoEl) photoEl.innerHTML = '';
+    const url = (wordPhotos[w.id]) || w.photo_url || null;
+
+    if (statusEl) {
+        statusEl.classList.remove('has-photo', 'no-photo');
+        if (url) {
+            statusEl.classList.add('has-photo');
+            statusEl.textContent = '📸 写真あり (photo)';
+        } else {
+            statusEl.classList.add('no-photo');
+            statusEl.textContent = '🚫 写真なし (no photo)';
+        }
+    }
+
     if (photoEl) {
-        photoEl.innerHTML = '';
-        const url = wordPhotos[w.id];
         if (url) {
             const img = document.createElement('img');
             img.src = url;
             img.alt = w.word;
             photoEl.appendChild(img);
-        } else if (w.photo_url) {
-            const img = document.createElement('img');
-            img.src = w.photo_url;
-            img.alt = w.word;
-            photoEl.appendChild(img);
+            photoEl.classList.add('has-photo');
+            photoEl.classList.remove('empty');
+        } else {
+            photoEl.classList.add('empty');
+            photoEl.classList.remove('has-photo');
         }
     }
 }
@@ -930,7 +946,15 @@ async function saveWord(event) {
         wordOrder = allWords.map((_, i) => i);
         renderWords();
     }
-    
+
+    // Refresh the card study list if the card view is open
+    if (cardSection.style.display === 'block') {
+        cardOrder = allWords.map((_, i) => i);
+        cardIndex = cardIndex >= cardOrder.length ? cardOrder.length - 1 : cardIndex;
+        if (cardIndex < 0) cardIndex = 0;
+        renderCard();
+    }
+
     closeWordModal();
 }
 

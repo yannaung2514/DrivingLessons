@@ -834,11 +834,11 @@ header p {
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
     cursor: pointer;
     user-select: none;
-    min-height: 300px;
+    min-height: 460px;
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
+    justify-content: space-between;
     touch-action: pan-y;
     transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
@@ -851,6 +851,14 @@ header p {
     border-color: var(--success);
 }
 
+.card-study-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    margin-bottom: 16px;
+}
+
 .card-study-cat {
     display: inline-block;
     padding: 3px 12px;
@@ -859,7 +867,12 @@ header p {
     color: #9a3412;
     font-size: 0.78rem;
     font-weight: bold;
-    margin-bottom: 14px;
+}
+
+.card-study-index {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    font-weight: 600;
 }
 
 .card-study-word {
@@ -874,7 +887,23 @@ header p {
 .card-study-reading {
     font-size: 1.1rem;
     color: var(--text-muted);
-    margin-bottom: 18px;
+    margin-bottom: 6px;
+}
+
+.card-study-divider {
+    width: 60px;
+    height: 2px;
+    border-radius: 2px;
+    background: linear-gradient(90deg, var(--primary), var(--accent));
+    margin: 10px auto 12px auto;
+}
+
+.card-study-meaning-label {
+    font-size: 0.75rem;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    margin-bottom: 6px;
 }
 
 .card-study-meaning {
@@ -891,22 +920,70 @@ header p {
     font-weight: 600;
 }
 
-.card-study-photo {
+.card-study-photo-zone {
     margin-top: 20px;
     width: 100%;
+}
+
+/* Fixed-height photo zone so the card frame doesn't change with/without a photo */
+.card-study-photo {
+    height: 200px;
+    width: 100%;
     display: flex;
+    align-items: center;
     justify-content: center;
+    border-radius: 12px;
+    overflow: hidden;
+    background: #f0f4fa;
+    position: relative;
+}
+
+.card-study-photo.has-photo {
+    background: #fff;
+    border: 2px solid #dbe8ff;
+}
+
+.card-study-photo.empty {
+    border: 2px dashed #ccd5e4;
+    background:
+        linear-gradient(135deg, #f6f8fc 25%, transparent 25%) 0 0 / 20px 20px,
+        #fafbfe;
+}
+
+/* Big camera placeholder icon when no photo */
+.card-study-photo.empty::after {
+    content: '🖼️ 写真なし';
+    font-size: 1rem;
+    color: #9aa5b5;
+    text-align: center;
 }
 
 .card-study-photo img {
     max-width: 100%;
-    max-height: 200px;
+    max-height: 100%;
     width: auto;
     height: auto;
-    border-radius: 10px;
-    border: 2px solid #e3e8f5;
-    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+    border-radius: 8px;
     object-fit: contain;
+}
+
+.card-study-photo-status {
+    width: fit-content;
+    margin: 0 auto 8px auto;
+    padding: 3px 12px;
+    border-radius: 999px;
+    font-size: 0.78rem;
+    font-weight: bold;
+}
+
+.card-study-photo-status.has-photo {
+    background: #d1fae5;
+    color: #047857;
+}
+
+.card-study-photo-status.no-photo {
+    background: #eef1f6;
+    color: #6b7280;
 }
 
 .card-study-nav {
@@ -930,8 +1007,8 @@ header p {
 /* Phone / tablet responsiveness */
 @media (max-width: 480px) {
     .card-study-word { font-size: 2rem; }
-    .card-study-card { padding: 20px 14px 18px; min-height: 260px; }
-    .card-study-photo img { max-height: 150px; }
+    .card-study-card { padding: 20px 14px 18px; min-height: 400px; }
+    .card-study-photo { height: 140px; }
     .card-study-nav { flex-wrap: wrap; }
     .card-study-nav .nav-btn { flex: 1 1 40%; }
 }
