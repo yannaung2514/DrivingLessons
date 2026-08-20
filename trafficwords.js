@@ -221,6 +221,132 @@ const trafficWordData = [
   ,{ word: '方面・方向の案内', reading: 'ほうめん・ほうこうのあんない', meaning: 'ဦးတည်ရာလမ်းညွှန်', category: '案内標識' }
   ,{ word: '距離の案内', reading: 'きょりのあんない', meaning: 'အကွာအဝေးလမ်းညွှန်', category: '案内標識' }
   ,{ word: '主要地点を示す案内', reading: 'しゅようちてんをしめすあんない', meaning: 'အဓိကနေရာလမ်းညွှန်', category: '案内標識' }
+  // 動詞・フレーズ (Verbs & phrases) — driving actions
+  ,{ word: '運転する', reading: 'うんてんする', meaning: 'ကားမောင်းသည်', category: '動詞・フレーズ' }
+  ,{ word: '止まる', reading: 'とまる', meaning: 'ရပ်သည်', category: '動詞・フレーズ' }
+  ,{ word: '曲がる', reading: 'まがる', meaning: 'ကွေ့သည်', category: '動詞・フレーズ' }
+  ,{ word: '右に曲がる', reading: 'みぎにまがる', meaning: 'ညာဘက်ကွေ့သည်', category: '動詞・フレーズ' }
+  ,{ word: '左に曲がる', reading: 'ひだりにまがる', meaning: 'ဘယ်ဘက်ကွေ့သည်', category: '動詞・フレーズ' }
+  ,{ word: '進む', reading: 'すすむ', meaning: 'ရှေ့ဆက်သည်', category: '動詞・フレーズ' }
+  ,{ word: '走る', reading: 'はしる', meaning: 'ပြေးသည် (မောင်းသည်)', category: '動詞・フレーズ' }
+  ,{ word: '加速する', reading: 'かそくする', meaning: 'အရှိန်မြှင့်သည်', category: '動詞・フレーズ' }
+  ,{ word: '減速する', reading: 'げんそくする', meaning: 'အရှိန်လျှော့သည်', category: '動詞・フレーズ' }
+  ,{ word: '追い越す', reading: 'おいこす', meaning: 'ကျော်တက်သည်', category: '動詞・フレーズ' }
+  ,{ word: '信号を守る', reading: 'しんごうをまもる', meaning: 'မီးပွိုင့်ကိုလိုက်နာသည်', category: '動詞・フレーズ' }
+  ,{ word: '横断する', reading: 'おうだんする', meaning: 'ဖြတ်ကူးသည်', category: '動詞・フレーズ' }
+  ,{ word: '合流する', reading: 'ごうりゅうする', meaning: 'လမ်းပေါင်းဆုံသည်', category: '動詞・フレーズ' }
+  // 車両点検 (Vehicle check)
+  ,{ word: 'タイヤ', reading: 'タイヤ', meaning: 'ဘီး တာယာ', category: '車両点検' }
+  ,{ word: 'ワイパー', reading: 'ワイパー', meaning: 'ကားရှေ့ဖန် သုတ်ကိရိယာ', category: '車両点検' }
+  ,{ word: 'ミラー', reading: 'ミラー', meaning: 'မှန်', category: '車両点検' }
+  ,{ word: 'ライト', reading: 'ライト', meaning: 'မီး', category: '車両点検' }
+  ,{ word: 'ヘッドライト', reading: 'ヘッドライト', meaning: 'ရှေ့မီး', category: '車両点検' }
+  ,{ word: 'ブレーキ', reading: 'ブレーキ', meaning: 'ဘရိတ်', category: '車両点検' }
+  ,{ word: 'エンジン', reading: 'エンジン', meaning: 'အင်ဂျင်', category: '車両点検' }
+  ,{ word: 'ガソリン', reading: 'ガソリン', meaning: 'ဓာတ်ဆီ', category: '車両点検' }
+  ,{ word: '燃料', reading: 'ねんりょう', meaning: 'လောင်စာ', category: '車両点検' }
+  ,{ word: 'オイル', reading: 'オイル', meaning: 'ဆီ', category: '車両点検' }
+  ,{ word: 'ハンドル', reading: 'ハンドル', meaning: 'စတီယာရင်', category: '車両点検' }
+  ,{ word: 'シート', reading: 'シート', meaning: 'ထိုင်ခုံ', category: '車両点検' }
+  ,{ word: 'クラクション', reading: 'クラクション', meaning: 'ဟွန်း', category: '車両点検' }
+  ,{ word: 'ウインカー', reading: 'ウインカー', meaning: 'အချက်ပြ (လှည့်မီး)', category: '車両点検' }
+  ,{ word: 'バッテリー', reading: 'バッテリー', meaning: 'ဘက်ထရီ', category: '車両点検' }
+  ,{ word: '積載荷重', reading: 'せきさいかじゅう', meaning: 'သယ်ဆောင်နိုင်သောဝန်', category: '車両点検' }
+  ,{ word: '点検する', reading: 'てんけんする', meaning: 'စစ်ဆေးသည်', category: '車両点検' }
+  // 道路・道路設備 (Road & facilities)
+  ,{ word: 'トンネル', reading: 'トンネル', meaning: 'ဥမင်', category: '道路・設備' }
+  ,{ word: '橋', reading: 'はし', meaning: 'တံတား', category: '道路・設備' }
+  ,{ word: '歩道橋', reading: 'ほどうきょう', meaning: 'လူကူးတံတား', category: '道路・設備' }
+  ,{ word: '料金所', reading: 'りょうきんじょ', meaning: 'အခပေးဂိတ်', category: '道路・設備' }
+  ,{ word: '信号柱', reading: 'しんごうちゅう', meaning: 'မီးပွိုင့်တိုင်', category: '道路・設備' }
+  ,{ word: '横断歩道橋', reading: 'おうだんほどうきょう', meaning: 'လူကူးဖြတ်ကူးတံတား', category: '道路・設備' }
+  ,{ word: 'ガードレール', reading: 'ガードレール', meaning: 'လမ်းဘေးအကာ', category: '道路・設備' }
+  ,{ word: '道路工事', reading: 'どうろこうじ', meaning: 'လမ်းပြုပြင်ခြင်း', category: '道路・設備' }
+  ,{ word: '渋滞', reading: 'じゅうたい', meaning: 'ယာဉ်ကြောပိတ်ဆို့', category: '道路・設備' }
+  ,{ word: 'カーブ', reading: 'カーブ', meaning: 'လမ်းကွေ့', category: '道路・設備' }
+  // 免許・手続き (License & procedure)
+  ,{ word: '初心者マーク', reading: 'しょしんしゃマーク', meaning: 'အစပြုသူ အမှတ်', category: '免許・手続き' }
+  ,{ word: '高齢者マーク', reading: 'こうれいしゃマーク', meaning: 'သက်ကြီးရွယ်အို အမှတ်', category: '免許・手続き' }
+  ,{ word: '仮免許', reading: 'かりめんきょ', meaning: 'ယာယီလိုင်စင်', category: '免許・手続き' }
+  ,{ word: '本免許', reading: 'ほんめんきょ', meaning: 'တရားဝင်လိုင်စင်', category: '免許・手続き' }
+  ,{ word: '失効', reading: 'しっこう', meaning: 'သက်တမ်းကုန်ခြင်း', category: '免許・手続き' }
+  ,{ word: '更新', reading: 'こうしん', meaning: 'သက်တမ်းတိုးခြင်း', category: '免許・手続き' }
+  ,{ word: '有効期限', reading: 'ゆうこうきげん', meaning: 'သက်တမ်းကုန်ရက်', category: '免許・手続き' }
+  ,{ word: '学科試験', reading: 'がっかしけん', meaning: 'စာမေးပွဲ', category: '免許・手続き' }
+  ,{ word: '技能試験', reading: 'ぎのうしけん', meaning: 'လက်တွေ့စမ်းသပ်မှု', category: '免許・手続き' }
+  // 安全・心得 (Safety & etiquette)
+  ,{ word: '安全運転', reading: 'あんぜんうんてん', meaning: 'လုံခြုံသောမောင်းနှင်မှု', category: '安全・心得' }
+  ,{ word: '運転マナー', reading: 'うんてんマナー', meaning: 'လမ်းစည်းကမ်း ထုံးတမ်း', category: '安全・心得' }
+  ,{ word: '車間距離を保つ', reading: 'しゃかんきょりをたもつ', meaning: 'အကွာအဝေးထိန်းသည်', category: '安全・心得' }
+  ,{ word: '反射材', reading: 'はんしゃざい', meaning: 'ရောင်ပြန် ပစ္စည်း', category: '安全・心得' }
+  ,{ word: '路肩', reading: 'ろかた', meaning: 'လမ်းဘေး', category: '安全・心得' }
+  ,{ word: '一時停車', reading: 'いちじていしゃ', meaning: 'ခဏရပ်တန့်ခြင်း', category: '安全・心得' }
+  ,{ word: '確認して進む', reading: 'かくにんしてすすむ', meaning: 'စစ်ဆေး၍ဆက်သည်', category: '安全・心得' }
+  // その他 (Extra) — misc useful terms
+  ,{ word: '反対方向', reading: 'はんたいほうこう', meaning: 'ဆန့်ကျင်ဘက်ဘက်', category: 'その他' }
+  ,{ word: '進行方向', reading: 'しんこうほうこう', meaning: 'သွားမည့်ဘက်', category: 'その他' }
+  ,{ word: '交差点付近', reading: 'こうさてんふきん', meaning: 'လမ်းဆုံအနီး', category: 'その他' }
+  ,{ word: '視界が悪い', reading: 'しかいがわるい', meaning: 'မြင်ကွင်းဆိုးသည်', category: 'その他' }
+  ,{ word: '安全な速度', reading: 'あんぜんなそくど', meaning: 'လုံခြုံသောအမြန်နှုန်း', category: 'その他' }
+  ,{ word: '前方確認', reading: 'ぜんぽうかくにん', meaning: 'ရှေ့စစ်ဆေးခြင်း', category: 'その他' }
+  ,{ word: '後方確認', reading: 'こうほうかくにん', meaning: 'နောက်စစ်ဆေးခြင်း', category: 'その他' }
+  ,{ word: '指差し確認', reading: 'ゆびさしかくにん', meaning: 'လက်ညှိုး၍စစ်ဆေးခြင်း', category: 'その他' }
+  ,{ word: '目視確認', reading: 'もくしかくにん', meaning: 'မြင်ကွင်းစစ်ဆေးခြင်း', category: 'その他' }
+  ,{ word: '余裕を持つ', reading: 'よゆうをもつ', meaning: 'အပိုချန်ထားသည်', category: 'その他' }
+  ,{ word: '早めの行動', reading: 'はやめのこうどう', meaning: 'စောစောလုပ်ဆောင်ခြင်း', category: 'その他' }
+  ,{ word: '交通整理', reading: 'こうつうせいり', meaning: 'လမ်းစည်းကမ်းထိန်းသိမ်း', category: 'その他' }
+  ,{ word: '交通違反', reading: 'こうつういはん', meaning: 'လမ်းစည်းကမ်းချိုးဖောက်', category: 'その他' }
+  ,{ word: '交通ルール', reading: 'こうつうルール', meaning: 'လမ်းစည်းကမ်း', category: 'その他' }
+  ,{ word: '運転免許証', reading: 'うんてんめんきょしょう', meaning: 'မောင်းလိုင်စင်ကတ်', category: 'その他' }
+  ,{ word: '身分証明書', reading: 'みぶんしょうめいしょ', meaning: 'သက်သေခံကတ်', category: 'その他' }
+  ,{ word: '保険証', reading: 'ほけんしょう', meaning: 'အာမခံကတ်', category: 'その他' }
+  ,{ word: '保険', reading: 'ほけん', meaning: 'အာမခံ', category: 'その他' }
+  ,{ word: '違反点数', reading: 'いはんてんすう', meaning: 'ဒဏ်မှတ်', category: 'その他' }
+  ,{ word: '免許停止', reading: 'めんきょていし', meaning: 'လိုင်စင်ရပ်ဆိုင်း', category: 'その他' }
+  ,{ word: '罰金', reading: 'ばっきん', meaning: 'ငွေဒဏ်', category: 'その他' }
+  ,{ word: '出発', reading: 'しゅっぱつ', meaning: 'ထွက်ခွာခြင်း', category: '動詞・フレーズ' }
+  ,{ word: '到着', reading: 'とうちゃく', meaning: 'ရောက်ရှိခြင်း', category: '動詞・フレーズ' }
+  ,{ word: '停止', reading: 'ていし', meaning: 'ရပ်တန့်ခြင်း', category: '動詞・フレーズ' }
+  ,{ word: '発進', reading: 'はっしん', meaning: 'ထွက်ခွာမောင်းခြင်း', category: '動詞・フレーズ' }
+  ,{ word: '発車', reading: 'はっしゃ', meaning: 'ထွက်ခွာသည်', category: '動詞・フレーズ' }
+  ,{ word: '右折する', reading: 'うせつする', meaning: 'ညာဘက်ကွေ့သည်', category: '動詞・フレーズ' }
+  ,{ word: '左折する', reading: 'させつする', meaning: 'ဘယ်ဘက်ကွေ့သည်', category: '動詞・フレーズ' }
+  ,{ word: '巻き込み', reading: 'まきこみ', meaning: 'လှည့်စဉ် ဝင်ပါခြင်း', category: '動詞・フレーズ' }
+  ,{ word: '追い付く', reading: 'おいつく', meaning: 'လိုက်မှီသည်', category: '動詞・フレーズ' }
+  ,{ word: '通過', reading: 'つうか', meaning: 'ဖြတ်သွားခြင်း', category: '動詞・フレーズ' }
+  ,{ word: '横切る', reading: 'よこぎる', meaning: 'ဖြတ်ကူးသည်', category: '動詞・フレーズ' }
+  ,{ word: 'バック', reading: 'バック', meaning: 'နောက်ပြန်မောင်း', category: '動詞・フレーズ' }
+  ,{ word: 'クラッチを切る', reading: 'クラッチをきる', meaning: 'ကလပ်ချ် လွှတ်သည်', category: '車両点検' }
+  ,{ word: 'ギアチェンジ', reading: 'ギアチェンジ', meaning: 'ဂီယာပြောင်း', category: '車両点検' }
+  ,{ word: 'サイドミラー', reading: 'サイドミラー', meaning: 'ဘေးမှန်', category: '車両点検' }
+  ,{ word: 'バックミラー', reading: 'バックミラー', meaning: 'နောက်မှန်', category: '車両点検' }
+  ,{ word: 'ウォッシャー液', reading: 'ウォッシャーえき', meaning: 'ရေသန့် အရည်', category: '車両点検' }
+  ,{ word: '冷却水', reading: 'れいきゃくすい', meaning: 'အအေးခံရေ', category: '車両点検' }
+  ,{ word: 'ラジエーター', reading: 'ラジエーター', meaning: 'အပူထုတ်စက်', category: '車両点検' }
+  ,{ word: 'タイヤの空気圧', reading: 'タイヤのくうきあつ', meaning: 'ဘီးလေဖိအား', category: '車両点検' }
+  ,{ word: 'ブレーキ液', reading: 'ブレーキえき', meaning: 'ဘရိတ်အရည်', category: '車両点検' }
+  ,{ word: 'エンジンオイル', reading: 'エンジンオイル', meaning: 'အင်ဂျင်ဆီ', category: '車両点検' }
+  ,{ word: '定期点検', reading: 'ていきてんけん', meaning: 'ပုံမှန်စစ်ဆေးခြင်း', category: '車両点検' }
+  ,{ word: '交差点の中心', reading: 'こうさてんのちゅうしん', meaning: 'လမ်းဆုံဗဟို', category: '道路・設備' }
+  ,{ word: '中央線', reading: 'ちゅうおうせん', meaning: 'အလယ်မျဉ်း', category: '道路・設備' }
+  ,{ word: '追越車線', reading: 'おいこししゃせん', meaning: 'ကျော်တက်လမ်းကြောင်း', category: '道路・設備' }
+  ,{ word: '登坂車線', reading: 'とはんしゃせん', meaning: 'တောင်တက်လမ်းကြောင်း', category: '道路・設備' }
+  ,{ word: '非常駐車帯', reading: 'ひじょうちゅうしゃたい', meaning: 'အရေးပေါ်ရပ်နားကွင်း', category: '道路・設備' }
+  ,{ word: '路肩の広い所', reading: 'ろかたのひろいところ', meaning: 'လမ်းဘေးကျယ်သောနေရာ', category: '道路・設備' }
+  ,{ word: '待避所', reading: 'たいひしょ', meaning: 'ဘေးရှောင်ကွင်း', category: '道路・設備' }
+  ,{ word: '駐車区画', reading: 'ちゅうしゃくかく', meaning: 'ရပ်နားကွက်ခွဲ', category: '道路・設備' }
+  ,{ word: '標識前の停止線', reading: 'ひょうしきまえのていしせん', meaning: 'ဆိုင်းဘုတ်ရှေ့ရပ်မျဉ်း', category: '道路・設備' }
+  ,{ word: '免許の種類', reading: 'めんきょのしゅるい', meaning: 'လိုင်စင်အမျိုးအစား', category: '免許・手続き' }
+  ,{ word: '運転免許の欠格事由', reading: 'うんてんめんきょのけっかくじゆう', meaning: 'လိုင်စင်မရနိုင်သောအကြောင်း', category: '免許・手続き' }
+  ,{ word: '免許の効力', reading: 'めんきょのこうりょく', meaning: 'လိုင်စင်အာနုဇော', category: '免許・手続き' }
+  ,{ word: '試験場', reading: 'しけんじょう', meaning: 'စာမေးပွဲဌာန', category: '免許・手続き' }
+  ,{ word: '練習', reading: 'れんしゅう', meaning: 'လေ့ကျင့်ခန်း', category: '免許・手続き' }
+  ,{ word: '石', reading: 'いし', meaning: 'ကျောက်', category: 'その他' }
+  ,{ word: '新設の交差点', reading: 'しんせつのこうさてん', meaning: 'အသစ်ဖွဲ့လမ်းဆုံ', category: 'その他' }
+  ,{ word: '駐車スペース', reading: 'ちゅうしゃスペース', meaning: 'ရပ်နားနေရာ', category: 'その他' }
+  ,{ word: '停止位置', reading: 'ていしいち', meaning: 'ရပ်တန့်ဆိုက်', category: 'その他' }
+  ,{ word: '方向指示器', reading: 'ほうこうしじき', meaning: 'ဦးတည်အချက်ပြ', category: 'その他' }
+  ,{ word: '見通し', reading: 'みとおし', meaning: 'မြင်ကွင်းကြည့်', category: 'その他' }
 ];
 
 // Expose globally when loaded as a plain <script>.

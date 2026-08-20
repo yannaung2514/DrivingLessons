@@ -12,6 +12,53 @@ let favorites = [];    // ids of favorites, persisted in localStorage
 const FAV_KEY = 'trafficRulesFavorites';
 const VIEWED_KEY = 'trafficRulesViewed';
 
+// ---- Rule photos (user-uploaded, stored in localStorage keyed by rule id) ----
+const RULE_PHOTO_KEY = 'trafficRulePhotos';
+let rulePhotos = {};
+function loadRulePhotos() {
+    try {
+        const raw = localStorage.getItem(RULE_PHOTO_KEY);
+        rulePhotos = raw ? JSON.parse(raw) : {};
+    } catch (e) { rulePhotos = {}; }
+    if (!rulePhotos || typeof rulePhotos !== 'object') rulePhotos = {};
+}
+function saveRulePhotos() {
+    try { localStorage.setItem(RULE_PHOTO_KEY, JSON.stringify(rulePhotos)); } catch (e) { /* ignore */ }
+}
+function currentRule() {
+    return allRules[order[currentIndex]];
+}
+function pickRulePhoto() {
+    const inp = document.getElementById('rulePhotoInput');
+    if (!inp) return;
+    inp.value = '';
+    inp.click();
+}
+function removeRulePhoto() {
+    const rule = currentRule();
+    if (!rule) return;
+    if (rulePhotos[rule.id]) {
+        delete rulePhotos[rule.id];
+        saveRulePhotos();
+        renderCurrent();
+    }
+}
+function renderRulePhotoUI() {
+    const rule = currentRule();
+    const rmBtn = document.getElementById('rulePhotoRemoveBtn');
+    const img = document.getElementById('rulePhotoImage');
+    if (!rule) return;
+    if (rmBtn) rmBtn.style.display = rulePhotos[rule.id] ? 'inline-block' : 'none';
+    if (img) {
+        if (rulePhotos[rule.id]) {
+            img.src = rulePhotos[rule.id];
+            img.style.display = 'block';
+        } else {
+            img.style.display = 'none';
+        }
+    }
+}
+
 // ---------------------------------------------------------------------
 // DOM references
 // ---------------------------------------------------------------------
@@ -170,7 +217,26 @@ function renderCurrent() {
     const viewed = viewedSet();
 
     cardCounter.textContent = `${currentIndex + 1} / ${allRules.length}`;
-    cardImage.innerHTML = rule.svg;
+    cardImage.innerHTML = '';
+    const photoImg = document.createElement('img');
+    photoImg.id = 'rulePhotoImage';
+    photoImg.alt = rule.title;
+    photoImg.style.display = 'none';
+    const svgWrap = document.createElement('div');
+    svgWrap.id = 'ruleSvgWrap';
+    svgWrap.innerHTML = rule.svg;
+    cardImage.appendChild(photoImg);
+    cardImage.appendChild(svgWrap);
+    // Use uploaded photo if present, else the built-in SVG illustration
+    if (rulePhotos[rule.id]) {
+        photoImg.src = rulePhotos[rule.id];
+        photoImg.style.display = 'block';
+        svgWrap.style.display = 'none';
+    } else {
+        photoImg.style.display = 'none';
+        svgWrap.style.display = 'block';
+    }
+    renderRulePhotoUI();
     cardCategory.textContent = rule.category;
     cardTitle.textContent = rule.title;
     cardReading.textContent = rule.reading;
@@ -478,9 +544,11 @@ function renderCard() {
             photoEl.appendChild(img);
             photoEl.classList.add('has-photo');
             photoEl.classList.remove('empty');
+            photoEl.title = w.word;
         } else {
             photoEl.classList.add('empty');
             photoEl.classList.remove('has-photo');
+            photoEl.title = 'クリックして写真を追加 (click to add photo)';
         }
     }
 }
@@ -510,6 +578,16 @@ function addCurrentCardFav() {
         saveFavorites();
     }
     alert('お気に入りに追加しました (added to favorites)');
+}
+
+// Click the empty card photo zone -> open file picker to add a photo.
+function cardPhotoZoneClick() {
+    const w = allWords[cardOrder[cardIndex]];
+    if (!w) return;
+    if (!wordPhotos[w.id] && !w.photo_url) {
+        const inp = document.getElementById('cardStudyPhotoInput');
+        if (inp) { inp.value = ''; inp.click(); }
+    }
 }
 
 // Swipe support (touch)
@@ -675,6 +753,7 @@ document.addEventListener('keydown', (e) => {
 // ---------------------------------------------------------------------
 async function init() {
     loadFavorites();
+    loadRulePhotos();
     loadPhotos();
     order = allRules.map((_, i) => i);
     currentIndex = 0;
@@ -700,6 +779,42 @@ async function init() {
                     // Use Supabase or localStorage
                     await savePhoto(photoTargetWord, dataUrl);
                     renderWords();
+                });
+            };
+            reader.readAsDataURL(file);
+        });
+    }
+
+    // Handle rule photo upload (study card)
+    const ruleInp = document.getElementById('rulePhotoInput');
+    if (ruleInp) {
+        ruleInp.addEventListener('change', () => {
+            const file = ruleInp.files && ruleInp.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = () => {
+                downscaleImage(reader.result, 900, (dataUrl) => {
+                    const rule = currentRule();
+                    if (!rule) return;
+                    rulePhotos[rule.id] = dataUrl;
+                    saveRulePhotos();
+                    renderCurrent();
+                });
+            };
+            reader.readAsDataURL(file);
+        });
+    }
+
+    // Handle photo chosen inside the add/edit word modal
+    const newInp = document.getElementById('wordNewPhotoInput');
+    if (newInp) {
+        newInp.addEventListener('change', () => {
+            const file = newInp.files && newInp.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = () => {
+                downscaleImage(reader.result, 720, (dataUrl) => {
+                    rememberNewWordPhoto(dataUrl, file.name);
                 });
             };
             reader.readAsDataURL(file);
@@ -843,10 +958,52 @@ function openAddWordModal() {
     if (modal && title && form) {
         form.reset();
         document.getElementById('wordId').value = '';
+        clearNewWordPhoto();
         populateCategorySelect('');
         title.textContent = '単語を追加';
         modal.classList.add('active');
     }
+}
+
+// Holds a dataURL for a photo chosen in the add/edit word modal.
+let pendingNewPhoto = null;
+
+// Open file picker for the add/edit modal photo.
+function pickNewWordPhoto() {
+    const inp = document.getElementById('wordNewPhotoInput');
+    if (inp) inp.click();
+}
+
+function clearNewWordPhoto() {
+    pendingNewPhoto = null;
+    const prev = document.getElementById('wordNewPhotoPreview');
+    const name = document.getElementById('wordNewPhotoName');
+    const inp = document.getElementById('wordNewPhotoInput');
+    if (inp) inp.value = '';
+    if (prev) prev.style.display = 'none';
+    if (name) name.textContent = '';
+}
+
+// Downscale + remember the chosen photo (shown as preview).
+function rememberNewWordPhoto(dataUrl, filename) {
+    pendingNewPhoto = dataUrl;
+    const name = document.getElementById('wordNewPhotoName');
+    const prev = document.getElementById('wordNewPhotoPreview');
+    const img = document.getElementById('wordNewPhotoPreviewImg');
+    if (name) name.textContent = filename || '写真を選択しました';
+    if (img) img.src = dataUrl;
+    if (prev) prev.style.display = 'flex';
+}
+
+// Upload a pending modal photo for the given word id after the word is saved.
+async function uploadPendingNewPhoto(wordId) {
+    if (!pendingNewPhoto || !wordId) return;
+    try {
+        await savePhoto(wordId, pendingNewPhoto);
+    } catch (e) {
+        console.warn('Could not save photo for new word:', e);
+    }
+    pendingNewPhoto = null;
 }
 
 // Fill the category <select> with all distinct categories from the word list.
@@ -913,6 +1070,7 @@ async function saveWord(event) {
             if (success) {
                 alert('単語を更新しました');
                 await loadWords();
+                await uploadPendingNewPhoto(wordId);
             } else {
                 alert('更新に失敗しました');
             }
@@ -921,7 +1079,9 @@ async function saveWord(event) {
             const success = await insertWordToDatabase(wordData);
             if (success) {
                 alert('単語を追加しました');
+                const newId = success.id;
                 await loadWords();
+                await uploadPendingNewPhoto(newId);
             } else {
                 alert('追加に失敗しました');
             }
@@ -935,13 +1095,16 @@ async function saveWord(event) {
                 allWords[idx] = { ...allWords[idx], ...wordData };
             }
             alert('単語を更新しましたローカル');
+            await uploadPendingNewPhoto(wordId);
         } else {
             // Add
+            const newId = `local_${Date.now()}`;
             allWords.push({
-                id: `local_${Date.now()}`,
+                id: newId,
                 ...wordData
             });
             alert('単語を追加しましたローカル');
+            await uploadPendingNewPhoto(newId);
         }
         wordOrder = allWords.map((_, i) => i);
         renderWords();

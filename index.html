@@ -32,7 +32,15 @@
     <section id="studySection">
         <div class="flashcard" id="flashcard">
             <div class="card-counter" id="cardCounter">1 / 26</div>
-            <div class="card-image" id="cardImage"><!-- SVG injected here --></div>
+            <div class="card-image" id="cardImage">
+                <img id="rulePhotoImage" alt="rule photo" style="display:none;">
+                <div id="ruleSvgWrap"></div>
+            </div>
+            <div class="card-photo-actions">
+                <button class="btn small-btn" onclick="pickRulePhoto()">📷 写真を追加</button>
+                <button class="btn small-btn" style="background:#ef4444;color:#fff;" onclick="removeRulePhoto()" id="rulePhotoRemoveBtn">✕ 写真を削除</button>
+            </div>
+            <input type="file" id="rulePhotoInput" accept="image/*" style="display:none;">
             <div class="card-category" id="cardCategory">カテゴリー</div>
             <div class="card-title-row">
                 <div class="card-title" id="cardTitle">ルール名</div>
@@ -99,7 +107,8 @@
                 <div class="card-study-meaning-label">意味・Meaning</div>
                 <div class="card-study-meaning" id="cardStudyMeaning"></div>
                 <div class="card-study-photo-zone">
-                    <div class="card-study-photo" id="cardStudyPhoto"></div>
+                    <div class="card-study-photo" id="cardStudyPhoto" onclick="cardPhotoZoneClick()"></div>
+                    <input type="file" id="cardStudyPhotoInput" accept="image/*" style="display:none;">
                 </div>
             </div>
             <div class="card-study-nav">
@@ -142,6 +151,18 @@
                 <div class="form-group">
                     <label for="wordCategory">カテゴリー (Category):</label>
                     <select id="wordCategory" required></select>
+                </div>
+                <div class="form-group">
+                    <label>写真 (Photo):</label>
+                    <input type="file" id="wordNewPhotoInput" accept="image/*" style="display:none;">
+                    <div style="display:flex;align-items:center;gap:10px;">
+                        <button type="button" class="btn small-btn" onclick="pickNewWordPhoto()">📷 写真を選ぶ</button>
+                        <span id="wordNewPhotoName" style="font-size:.8rem;color:var(--text-muted);"></span>
+                    </div>
+                    <div id="wordNewPhotoPreview" class="word-newphoto-preview" style="display:none;margin-top:8px;">
+                        <img id="wordNewPhotoPreviewImg" alt="preview">
+                        <button type="button" class="btn small-btn" style="background:#ef4444;color:#fff;" onclick="clearNewWordPhoto()">✕ 削除</button>
+                    </div>
                 </div>
                 <button type="submit" class="btn">保存</button>
             </form>
