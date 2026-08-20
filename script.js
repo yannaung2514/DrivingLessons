@@ -785,6 +785,25 @@ async function init() {
         });
     }
 
+    // Handle card study photo upload (photo added from カード tab)
+    const cardInp = document.getElementById('cardStudyPhotoInput');
+    if (cardInp) {
+        cardInp.addEventListener('change', () => {
+            const w = allWords[cardOrder[cardIndex]];
+            const file = cardInp.files && cardInp.files[0];
+            if (!file || !w) return;
+            const reader = new FileReader();
+            reader.onload = () => {
+                downscaleImage(reader.result, 900, (dataUrl) => {
+                    wordPhotos[w.id] = dataUrl;
+                    savePhotos();
+                    renderCard();
+                });
+            };
+            reader.readAsDataURL(file);
+        });
+    }
+
     // Handle rule photo upload (study card)
     const ruleInp = document.getElementById('rulePhotoInput');
     if (ruleInp) {
