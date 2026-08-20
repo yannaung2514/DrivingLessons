@@ -449,7 +449,7 @@ function renderCard() {
     if (catEl) catEl.textContent = w.category;
     if (wordEl) wordEl.textContent = w.word;
     if (readEl) readEl.textContent = w.reading;
-    if (meaningEl) meaningEl.textContent = '　(意味をタップ) 　Tap to show meaning';
+    if (meaningEl) meaningEl.textContent = w.myanmar || w.meaning;
 
     // Photo below the text if one exists
     if (photoEl) {
@@ -466,18 +466,6 @@ function renderCard() {
             img.alt = w.word;
             photoEl.appendChild(img);
         }
-    }
-}
-
-function revealCardMeaning() {
-    const w = allWords[cardOrder[cardIndex]];
-    if (!w) return;
-    const card = document.getElementById('cardStudyCard');
-    const meaningEl = document.getElementById('cardStudyMeaning');
-    if (meaningEl) meaningEl.textContent = w.myanmar || w.meaning;
-    if (card) {
-        card.classList.add('revealed');
-        cardRevealed = true;
     }
 }
 
