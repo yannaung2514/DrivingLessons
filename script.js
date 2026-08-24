@@ -136,6 +136,7 @@ let wordOrder = [];
 let hideMeaning = false;
 let useDatabase = false;  // Flag to track if we're using database
 let activeCategory = 'all';    // filter category
+let searchTerm = '';           // search filter (漢字・ひらがな・myanmar)
 const WORD_HIDE_KEY = 'trafficWordsHideMean';
 
 if (!allWords.length && typeof trafficWordData !== 'undefined') {
@@ -348,7 +349,8 @@ function showMode(mode) {
 // Vocabulary (words) rendering
 // ---------------------------------------------------------------------
 function renderWords() {
-    wordCount.textContent = `${allWords.length} 言葉`;
+    const total = allWords.filter(w => wordMatchesSearch(w)).length;
+    wordCount.textContent = `${total} / ${allWords.length} 言葉`;
     hideMeaningBtn.textContent = hideMeaning ? '🙉 意味を見る' : '🙈 意味を隠す';
     hideMeaningBtn.classList.toggle('active', hideMeaning);
 
@@ -371,6 +373,7 @@ function renderWords() {
     wordOrder.forEach(idx => {
         const w = allWords[idx];
         if (activeCategory !== 'all' && w.category !== activeCategory) return;
+        if (!wordMatchesSearch(w)) return;
         const card = document.createElement('div');
         card.className = 'word-card';
         card.dataset.idx = idx;
@@ -486,10 +489,20 @@ let cardRevealed = false;
 let cardTouchX = null;
 
 function initCards() {
-    if (cardOrder.length === 0 || cardOrder.length !== allWords.length) {
-        cardOrder = allWords.map((_, i) => i);
-    }
+    cardOrder = allWords.map((_, i) => i).filter(idx => wordMatchesSearch(allWords[idx]));
+    if (cardOrder.length === 0) cardOrder = allWords.map((_, i) => i);
     if (cardIndex >= cardOrder.length) cardIndex = 0;
+    cardRevealed = false;
+    renderCard();
+}
+
+// Re-filter the card deck when the search box changes (カード tab).
+function applyCardSearch() {
+    const matches = allWords.map((_, i) => i).filter(idx => wordMatchesSearch(allWords[idx]));
+    if (matches.length > 0) {
+        cardOrder = matches;
+        cardIndex = 0;
+    }
     cardRevealed = false;
     renderCard();
 }
@@ -564,7 +577,8 @@ function nextCard() { cardGoto(cardIndex + 1); }
 function prevCard() { cardGoto(cardIndex - 1); }
 
 function shuffleCards() {
-    cardOrder = shuffle(allWords.map((_, i) => i));
+    cardOrder = shuffle(allWords.map((_, i) => i).filter(idx => wordMatchesSearch(allWords[idx])));
+    if (cardOrder.length === 0) cardOrder = allWords.map((_, i) => i);
     cardIndex = 0;
     cardRevealed = false;
     renderCard();
@@ -645,6 +659,37 @@ function shuffle(arr) {
         [a[i], a[j]] = [a[j], a[i]];
     }
     return a;
+}
+
+// Returns true if a word matches the current search term (漢字・ひらがな・myanmar).
+function wordMatchesSearch(w) {
+    if (!searchTerm) return true;
+    const q = searchTerm.toLowerCase().trim();
+    if (!q) return true;
+    return (w.word && w.word.toLowerCase().includes(q))
+        || (w.reading && w.reading.toLowerCase().includes(q))
+        || (w.myanmar && w.myanmar.toLowerCase().includes(q))
+        || (w.meaning && w.meaning.toLowerCase().includes(q));
+}
+
+// Clear the 言葉 tab search box.
+function clearWordSearch() {
+    const inp = document.getElementById('wordSearchInput');
+    const btn = document.getElementById('wordSearchClear');
+    if (inp) inp.value = '';
+    if (btn) btn.style.display = 'none';
+    searchTerm = '';
+    renderWords();
+}
+
+// Clear the カード tab search box.
+function clearCardSearch() {
+    const inp = document.getElementById('cardSearchInput');
+    const btn = document.getElementById('cardSearchClear');
+    if (inp) inp.value = '';
+    if (btn) btn.style.display = 'none';
+    searchTerm = '';
+    applyCardSearch();
 }
 
 function renderQuizQuestion() {
@@ -824,6 +869,26 @@ async function init() {
         });
     }
 
+    // Search box listeners (言葉 & カード tabs)
+    const wordSearch = document.getElementById('wordSearchInput');
+    const wordSearchClear = document.getElementById('wordSearchClear');
+    if (wordSearch) {
+        wordSearch.addEventListener('input', () => {
+            searchTerm = wordSearch.value;
+            if (wordSearchClear) wordSearchClear.style.display = searchTerm ? 'inline-flex' : 'none';
+            renderWords();
+        });
+    }
+    const cardSearch = document.getElementById('cardSearchInput');
+    const cardSearchClear = document.getElementById('cardSearchClear');
+    if (cardSearch) {
+        cardSearch.addEventListener('input', () => {
+            searchTerm = cardSearch.value;
+            if (cardSearchClear) cardSearchClear.style.display = searchTerm ? 'inline-flex' : 'none';
+            applyCardSearch();
+        });
+    }
+
     // Handle photo chosen inside the add/edit word modal
     const newInp = document.getElementById('wordNewPhotoInput');
     if (newInp) {
@@ -850,10 +915,20 @@ async function init() {
         });
     }
 
-    // ESC key closes modal
+    // ESC key closes modal AND clears search
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
             closePhotoModal();
+            // Clear whichever search box is focused
+            const wordInp = document.getElementById('wordSearchInput');
+            const cardInp = document.getElementById('cardSearchInput');
+            if (document.activeElement === wordInp && wordInp.value) {
+                clearWordSearch();
+                wordInp.blur();
+            } else if (document.activeElement === cardInp && cardInp.value) {
+                clearCardSearch();
+                cardInp.blur();
+            }
         }
         // Arrow keys navigate the card study view when it's visible
         if (cardSection.style.display === 'block') {

@@ -72,6 +72,11 @@
 
     <!-- Words (Vocabulary) section -->
     <section id="wordSection" style="display:none;">
+        <div class="search-bar">
+            <span class="search-icon">🔍</span>
+            <input type="text" id="wordSearchInput" placeholder="漢字・ひらがな・မြန်မာ を検索 (search)">
+            <button type="button" class="search-clear" id="wordSearchClear" onclick="clearWordSearch()" style="display:none;">✕</button>
+        </div>
         <div class="word-toolbar">
             <span id="wordCount" class="word-count">0 言葉</span>
             <div style="display:flex;gap:8px;">
@@ -88,6 +93,11 @@
 
     <!-- Card (single word study) section -->
     <section id="cardSection" style="display:none;">
+        <div class="search-bar">
+            <span class="search-icon">🔍</span>
+            <input type="text" id="cardSearchInput" placeholder="漢字・ひらがな・မြန်မာ を検索 (search)">
+            <button type="button" class="search-clear" id="cardSearchClear" onclick="clearCardSearch()" style="display:none;">✕</button>
+        </div>
         <div class="card-study-box">
             <div class="card-study-topbar">
                 <span id="cardStudyCount" class="word-count">0 / 0</span>
