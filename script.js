@@ -799,6 +799,63 @@ document.addEventListener('keydown', (e) => {
 async function init() {
     loadFavorites();
     loadRulePhotos();
+
+    // Rule tab: edge strip click navigation
+    var prevEdge = document.querySelector('.rule-nav-prev');
+    var nextEdge = document.querySelector('.rule-nav-next');
+    if (prevEdge) prevEdge.addEventListener('click', function(e) { e.stopPropagation(); prevRule(); });
+    if (nextEdge) nextEdge.addEventListener('click', function(e) { e.stopPropagation(); nextRule(); });
+
+    // Rule tab: right-click / long-press on photo area -> show context menu
+    var flashcardEl = document.getElementById('flashcard');
+    var pressTimer = null;
+    if (flashcardEl) {
+        flashcardEl.addEventListener('contextmenu', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            showRulePhotoMenu(e.clientX, e.clientY);
+        });
+        flashcardEl.addEventListener('touchstart', function(e) {
+            var x = e.touches[0].clientX, y = e.touches[0].clientY;
+            pressTimer = setTimeout(function() { showRulePhotoMenu(x, y); }, 600);
+        }, { passive: true });
+        flashcardEl.addEventListener('touchend', function() { clearTimeout(pressTimer); }, { passive: true });
+        flashcardEl.addEventListener('touchmove', function() { clearTimeout(pressTimer); }, { passive: true });
+    }
+
+    function showRulePhotoMenu(x, y) {
+        var old = document.getElementById('photoContextMenu');
+        if (old) old.remove();
+        var menu = document.createElement('div');
+        menu.id = 'photoContextMenu';
+        menu.style.cssText = 'position:fixed;top:'+y+'px;left:'+x+'px;z-index:9999;background:#fff;border-radius:8px;box-shadow:0 4px 20px rgba(0,0,0,.2);padding:4px;display:flex;flex-direction:column;min-width:160px;';
+        
+        var addBtn = document.createElement('button');
+        addBtn.textContent = '\u{1F4F7} \u5199\u771F\u3092\u8FFD\u52A0';
+        addBtn.style.cssText = 'border:none;background:none;padding:10px 16px;text-align:left;cursor:pointer;font-size:.9rem;color:#333;border-radius:6px;';
+        addBtn.onmouseenter = function(){this.style.background='#f5f5f5';};
+        addBtn.onmouseleave = function(){this.style.background='none';};
+        addBtn.onclick = function() { pickRulePhoto(); menu.remove(); };
+        menu.appendChild(addBtn);
+        
+        var rule = currentRule();
+        if (rule && rulePhotos[rule.id]) {
+            var delBtn = document.createElement('button');
+            delBtn.textContent = '\u{1F5D1} \u5199\u771F\u3092\u524A\u9664';
+            delBtn.style.cssText = 'border:none;background:none;padding:10px 16px;text-align:left;cursor:pointer;font-size:.9rem;color:#ef4444;border-radius:6px;';
+            delBtn.onmouseenter = function(){this.style.background='#fef2f2';};
+            delBtn.onmouseleave = function(){this.style.background='none';};
+            delBtn.onclick = function() { removeRulePhoto(); menu.remove(); };
+            menu.appendChild(delBtn);
+        }
+        
+        document.body.appendChild(menu);
+        setTimeout(function() {
+            document.addEventListener('click', function close(ev) {
+                if (!menu.contains(ev.target)) { menu.remove(); document.removeEventListener('click', close); }
+            });
+        }, 100);
+    }
     loadPhotos();
     order = allRules.map((_, i) => i);
     currentIndex = 0;
@@ -889,30 +946,7 @@ async function init() {
         });
     }
 
-        // Rule photo: right-click / long-press to add or delete
-    const ruleImg = document.getElementById('cardImage');
-    let pressTimer = null;
-    if (ruleImg) {
-        // Right-click on desktop
-        ruleImg.addEventListener('contextmenu', function(e) {
-            e.preventDefault();
-            showRulePhotoMenu(e.clientX, e.clientY);
-        });
-        // Long press on mobile
-        ruleImg.addEventListener('touchstart', function(e) {
-            var x = e.touches[0].clientX;
-            var y = e.touches[0].clientY;
-            pressTimer = setTimeout(function() {
-                showRulePhotoMenu(x, y);
-            }, 600);
-        }, { passive: true });
-        ruleImg.addEventListener('touchend', function() {
-            clearTimeout(pressTimer);
-        }, { passive: true });
-        ruleImg.addEventListener('touchmove', function() {
-            clearTimeout(pressTimer);
-        }, { passive: true });
-    }
+        
 
     function showRulePhotoMenu(x, y) {
         var old = document.getElementById('photoContextMenu');
@@ -976,29 +1010,26 @@ async function init() {
         });
     }
 
-    // ESC key closes modal AND clears search
+    // ESC key closes modal AND clears search | Arrow keys navigate
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
             closePhotoModal();
-            // Clear whichever search box is focused
-            const wordInp = document.getElementById('wordSearchInput');
-            const cardInp = document.getElementById('cardSearchInput');
-            if (document.activeElement === wordInp && wordInp.value) {
-                clearWordSearch();
-                wordInp.blur();
-            } else if (document.activeElement === cardInp && cardInp.value) {
-                clearCardSearch();
-                cardInp.blur();
-            }
+            var wordInp = document.getElementById('wordSearchInput');
+            var cardInp = document.getElementById('cardSearchInput');
+            if (document.activeElement === wordInp && wordInp.value) { clearWordSearch(); wordInp.blur(); }
+            else if (document.activeElement === cardInp && cardInp.value) { clearCardSearch(); cardInp.blur(); }
         }
-        // Arrow keys navigate the card study view when it's visible
-        if (cardSection.style.display === 'block') {
+        if (cardSection.style.display === 'block' && !document.activeElement.closest('input,select,textarea')) {
             if (e.key === 'ArrowRight') { e.preventDefault(); nextCard(); }
             else if (e.key === 'ArrowLeft') { e.preventDefault(); prevCard(); }
         }
+        if (studySection.style.display !== 'none' && !document.activeElement.closest('input,select,textarea')) {
+            if (e.key === 'ArrowRight') { e.preventDefault(); nextRule(); }
+            else if (e.key === 'ArrowLeft') { e.preventDefault(); prevRule(); }
+        }
     });
 
-    // Touch swipe for the card study view (phone/tablet)
+    // Handle rule photo upload (study card)// Touch swipe for the card study view (phone/tablet)
     const cardEl = document.getElementById('cardStudyCard');
     if (cardEl) {
         cardEl.addEventListener('touchstart', (e) => {
