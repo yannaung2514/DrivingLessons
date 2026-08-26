@@ -116,8 +116,10 @@ header p {
 }
 
 #rulePhotoImage {
+    max-height: 300px;
     object-fit: contain;
-    border: 2px solid #dbe8ff;
+    background: #ffffff;
+    border: 1px solid #e8ecf3;
 }
 
 .card-photo-actions {
@@ -1144,8 +1146,18 @@ header p {
 /* refined flashcard image area */
 .card-image {
     padding: 10px;
-    background: #f6f8fc;
+    background: #ffffff;
+    border: 1px solid #e8ecf3;
     border-radius: 12px;
+}
+
+.card-image svg {
+    width: 100%;
+    height: auto;
+    max-height: 300px;
+    display: block;
+    border-radius: 10px;
+    background: #ffffff;
 }
 
 /* refined nav buttons */
@@ -1161,5 +1173,45 @@ header p {
 }
 .word-card:hover {
     box-shadow: 0 14px 30px rgba(79, 70, 229, 0.16);
+}
+
+/* ============================================================
+   Click-to-navigate zones on the flashcard
+   ============================================================ */
+#studySection {
+    position: relative;
+    overflow: visible;
+}
+
+.card-nav-zone {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 50%;
+    cursor: pointer;
+    z-index: 5;
+}
+
+.card-nav-left {
+    left: 0;
+}
+
+.card-nav-right {
+    right: 0;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding-right: 8px;
+}
+
+.card-nav-arrow {
+    font-size: 3rem;
+    color: rgba(0, 0, 0, 0.12);
+    font-weight: bold;
+    transition: color 0.2s ease;
+}
+
+.card-nav-right:hover .card-nav-arrow {
+    color: rgba(230, 57, 70, 0.4);
 }
 
