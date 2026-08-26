@@ -36,11 +36,7 @@
                 <img id="rulePhotoImage" alt="rule photo" style="display:none;">
                 <div id="ruleSvgWrap"></div>
             </div>
-            <div class="card-photo-actions">
-                <button class="btn small-btn" onclick="pickRulePhoto()">📷 写真を追加</button>
-                <button class="btn small-btn" style="background:#ef4444;color:#fff;" onclick="removeRulePhoto()" id="rulePhotoRemoveBtn">✕ 写真を削除</button>
-            </div>
-            <input type="file" id="rulePhotoInput" accept="image/*" style="display:none;">
+                        <input type="file" id="rulePhotoInput" accept="image/*" style="display:none;">
             <div class="card-category" id="cardCategory">カテゴリー</div>
             <div class="card-title-row">
                 <div class="card-title" id="cardTitle">ルール名</div>
@@ -51,19 +47,8 @@
             <div class="card-myanmar" id="cardMyanmar">မြန်မာဘာသာ ရှင်းလင်းချက်</div>
         </div>
 
-        <div class="flash-nav">
-            <button class="btn nav-btn" onclick="prevRule()">◀ 前へ 前のルール</button>
-            <button class="btn nav-btn accent" onclick="shuffleRules()">🔀 シャッフル</button>
-            <button class="btn nav-btn" onclick="nextRule()">次へ ▶ 次のルール</button>
-        </div>
-    </section>
-
-    <!-- Quiz (Test mode) -->
-    <section id="quizSection" style="display:none;">
-        <div class="quiz-box">
-            <h3 id="quizProgress">問題 1 / 10</h3>
-            <div id="quizPrompt"></div>
-            <div class="options-grid" id="quizOptions"></div>
+        <div class="rule-nav-edge rule-nav-prev" onclick="prevRule()" title="← 前へ"></div>
+        <div class="rule-nav-edge rule-nav-next" onclick="nextRule()" title="次へ →"><span>›</span></div>
             <div id="quizResult" class="result-box" style="display:none;"></div>
             <button class="btn" id="nextQuizBtn" style="display:none;" onclick="nextQuizQuestion()">次の問題 ▶</button>
             <button class="btn" id="restartQuizBtn" style="display:none;" onclick="startQuiz()">もう一度やり直す 🔄</button>
