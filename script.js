@@ -38,6 +38,10 @@ function removeRulePhoto() {
     const rule = currentRule();
     if (!rule) return;
     if (rulePhotos[rule.id]) {
+        // Delete from Supabase Storage
+        if (window.supabaseConfigured && supabaseClient && rulePhotos[rule.id].startsWith('http')) {
+            deleteRulePhotoFromSupabase(rule.id);
+        }
         delete rulePhotos[rule.id];
         saveRulePhotos();
         renderCurrent();
@@ -867,6 +871,8 @@ async function init() {
     // Rebuild word->photo mapping from Supabase Storage
     // (so photos show on new browsers/devices, not just this one's localStorage)
     await loadPhotosFromSupabase();
+    await loadRulePhotosFromSupabase();
+    renderCurrent();
     renderWords();
 
     // Handle photo upload from the hidden file input
@@ -914,11 +920,25 @@ async function init() {
             if (!file) return;
             const reader = new FileReader();
             reader.onload = () => {
-                downscaleImage(reader.result, 900, (dataUrl) => {
+                downscaleImage(reader.result, 900, async (dataUrl) => {
                     const rule = currentRule();
                     if (!rule) return;
-                    rulePhotos[rule.id] = dataUrl;
-                    saveRulePhotos();
+                    // Save to Supabase Storage (with localStorage fallback)
+                    if (window.supabaseConfigured && supabaseClient) {
+                        try {
+                            const url = await uploadRulePhotoToSupabase(rule.id, dataUrl);
+                            rulePhotos[rule.id] = url;
+                            saveRulePhotos();
+                            console.log('✅ Rule photo uploaded to Supabase');
+                        } catch (e) {
+                            console.warn('Supabase upload failed, saving locally:', e);
+                            rulePhotos[rule.id] = dataUrl;
+                            saveRulePhotos();
+                        }
+                    } else {
+                        rulePhotos[rule.id] = dataUrl;
+                        saveRulePhotos();
+                    }
                     renderCurrent();
                 });
             };

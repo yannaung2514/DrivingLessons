@@ -181,6 +181,79 @@ async function deletePhoto(wordId) {
 }
 
 // ============================================================
+// Rule Photo Storage (Supabase)
+// ============================================================
+
+/**
+ * Upload a rule photo to Supabase Storage
+ * @param {string} ruleId - The rule ID
+ * @param {string} dataUrl - Base64 data URL
+ * @returns {Promise<string>} Public URL
+ */
+async function uploadRulePhotoToSupabase(ruleId, dataUrl) {
+    if (!supabaseClient) throw new Error('Supabase not initialized');
+    const response = await fetch(dataUrl);
+    const blob = await response.blob();
+    const filePath = `rule-photos/${ruleId}.jpg`;
+    const { error } = await supabaseClient.storage
+        .from('traffic-photos')
+        .upload(filePath, blob, { contentType: 'image/jpeg', upsert: true });
+    if (error) throw error;
+    const { data: urlData } = supabaseClient.storage
+        .from('traffic-photos')
+        .getPublicUrl(filePath);
+    return urlData.publicUrl + '?v=' + Date.now();
+}
+
+/**
+ * Delete a rule photo from Supabase Storage
+ * @param {string} ruleId - The rule ID
+ */
+async function deleteRulePhotoFromSupabase(ruleId) {
+    if (!supabaseClient || !ruleId) return;
+    const filePath = `rule-photos/${ruleId}.jpg`;
+    const { error } = await supabaseClient.storage
+        .from('traffic-photos')
+        .remove([filePath]);
+    if (error) console.warn('Failed to delete rule photo:', error);
+}
+
+/**
+ * List all rule photos in the bucket and rebuild the mapping.
+ */
+async function loadRulePhotosFromSupabase() {
+    if (!supabaseClient) return 0;
+    try {
+        const { data, error } = await supabaseClient.storage
+            .from('traffic-photos')
+            .list('rule-photos');
+        if (error) throw error;
+
+        let count = 0;
+        (data || []).forEach(file => {
+            if (!file || !file.name || !file.name.toLowerCase().endsWith('.jpg')) return;
+            const ruleId = file.name.slice(0, -4);
+            if (!ruleId) return;
+            if (rulePhotos[ruleId] && rulePhotos[ruleId].startsWith('http')) return;
+            const { data: urlData } = supabaseClient.storage
+                .from('traffic-photos')
+                .getPublicUrl(`rule-photos/${file.name}`);
+            rulePhotos[ruleId] = urlData.publicUrl + '?v=' + Date.now();
+            count++;
+        });
+
+        if (count > 0) {
+            saveRulePhotos();
+            console.log(`✅ Loaded ${count} rule photo(s) from Supabase Storage`);
+        }
+        return count;
+    } catch (error) {
+        console.warn('Could not list rule photos from Supabase:', error);
+        return 0;
+    }
+}
+
+// ============================================================
 // Database Operations for Vocabulary Words
 // ============================================================
 
