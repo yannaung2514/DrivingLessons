@@ -250,7 +250,7 @@ function renderCurrent() {
 
     // Favorite button state
     favBtn.classList.toggle('active', favorites.includes(rule.id));
-    favBtn.textContent = favorites.includes(rule.id) ? '☁' : '☁';
+        favBtn.textContent = favorites.includes(rule.id) ? '★' : '☆';
 
     // Progress: percentage of rules marked viewed
     const pct = Math.round((viewed.size / allRules.length) * 100);
@@ -261,6 +261,7 @@ function renderCurrent() {
 }
 
 function renderFavorites() {
+    if (!favCount || !favChips) return;
     favCount.textContent = favorites.length;
     if (favorites.length === 0) {
         favChips.innerHTML = '<span class="empty-note">まだお気に入りがありません。カードの ☆ を押して追加できます。</span>';

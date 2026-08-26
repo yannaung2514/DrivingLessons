@@ -1,0 +1,230 @@
+[
+  {
+    "num": 2,
+    "name": "車両通行止め",
+    "description": "車両(自動車・軽車両・原動機付自転車)の進入ができない",
+    "imageSrc": "./規制標識一覧 - 禁止行為を伝えるための標識_files/sharyoutsukou.gif"
+  },
+  {
+    "num": 3,
+    "name": "車両進入禁止",
+    "description": "車両(自動車・軽車両・原動機付自転車)の進入ができない",
+    "imageSrc": "./規制標識一覧 - 禁止行為を伝えるための標識_files/sharyou-nyu-kinshi.gif"
+  },
+  {
+    "num": 4,
+    "name": "二輪の自動車以外の自動車通行止め",
+    "description": "二輪の自動車以外の自動車の通行ができない",
+    "imageSrc": "./規制標識一覧 - 禁止行為を伝えるための標識_files/nirinjidosha.gif"
+  },
+  {
+    "num": 5,
+    "name": "大型貨物自動車等通行止め",
+    "description": "大型貨物自動車（車両総重量11トン以上、または最大積載量6.5トン以上）と大型特殊自動車、特定中型貨物自動車（車両総重量8トン以上11トン未満、または最大積載量が5トン以上6.5トン未満）のみ通行ができない",
+    "imageSrc": "./規制標識一覧 - 禁止行為を伝えるための標識_files/oogata.gif"
+  },
+  {
+    "num": 7,
+    "name": "二輪の自動車・ 原動機付自転車通行止め",
+    "description": "二輪の自動車（大型自動二輪車・普通自動二輪車）と原動機付自転車は通行できない",
+    "imageSrc": "./規制標識一覧 - 禁止行為を伝えるための標識_files/nirinjidosha3.gif"
+  },
+  {
+    "num": 9,
+    "name": "自転車通行止め",
+    "description": "自転車は通行できない",
+    "imageSrc": "./規制標識一覧 - 禁止行為を伝えるための標識_files/jitensha-tsukokinshi.gif"
+  },
+  {
+    "num": 11,
+    "name": "大型自動二輪車 及び普通自動二輪車 二人乗り通行禁止",
+    "description": "大型自動二輪車・普通自動二輪車の二人乗り通行ができない(側車付のものを除く)",
+    "imageSrc": "./規制標識一覧 - 禁止行為を伝えるための標識_files/hyoushiki5.gif"
+  },
+  {
+    "num": 13,
+    "name": "指定方向外進行禁止-B",
+    "description": "矢印の方向以外の進行ができない",
+    "imageSrc": "./規制標識一覧 - 禁止行為を伝えるための標識_files/shiteihoukou.gif"
+  },
+  {
+    "num": 15,
+    "name": "指定方向外進行禁止-D",
+    "description": "矢印の方向以外の進行ができない",
+    "imageSrc": "./規制標識一覧 - 禁止行為を伝えるための標識_files/tsukoukinshi.gif"
+  },
+  {
+    "num": 17,
+    "name": "指定方向外進行禁止-F",
+    "description": "矢印の方向以外の進行ができない",
+    "imageSrc": "./規制標識一覧 - 禁止行為を伝えるための標識_files/sitei-tsukoukinshi.gif"
+  },
+  {
+    "num": 18,
+    "name": "車両横断禁止",
+    "description": "",
+    "imageSrc": "./規制標識一覧 - 禁止行為を伝えるための標識_files/sharyoukoudan.gif"
+  },
+  {
+    "num": 21,
+    "name": "駐停車禁止",
+    "description": "駐車・停車ができない(上部の数字は駐停車禁止の時間帯)",
+    "imageSrc": "./規制標識一覧 - 禁止行為を伝えるための標識_files/chushakinshi.gif"
+  },
+  {
+    "num": 23,
+    "name": "時間制限駐車区間",
+    "description": "指定時間外では駐車ができない(左画像の場合は８〜20時の間のみ60分間だけ停車可能)",
+    "imageSrc": "./規制標識一覧 - 禁止行為を伝えるための標識_files/jikansegenchusha.gif"
+  },
+  {
+    "num": 25,
+    "name": "重量制限",
+    "description": "総重量が標識の重量制限を超える車両は通行できない",
+    "imageSrc": "./規制標識一覧 - 禁止行為を伝えるための標識_files/juuryouseigen.gif"
+  },
+  {
+    "num": 26,
+    "name": "高さ制限",
+    "description": "標識に示された高さ制限を超える車両は通行できない(車両の高さは積荷も含む)",
+    "imageSrc": "./規制標識一覧 - 禁止行為を伝えるための標識_files/takasasegen.gif"
+  },
+  {
+    "num": 27,
+    "name": "最大幅",
+    "description": "標識に示された最大幅を超える車両は通行できない(車両の幅は積荷も含む)",
+    "imageSrc": "./規制標識一覧 - 禁止行為を伝えるための標識_files/saidaihaba.gif"
+  },
+  {
+    "num": 28,
+    "name": "最高速度",
+    "description": "標識に示された最大速度を超える速度で車両は走行できない",
+    "imageSrc": "./規制標識一覧 - 禁止行為を伝えるための標識_files/saikosoku.gif"
+  },
+  {
+    "num": 29,
+    "name": "最低速度",
+    "description": "標識に示された最低速度を下回る速度で車両は走行できない",
+    "imageSrc": "./規制標識一覧 - 禁止行為を伝えるための標識_files/shuteisokudo.gif"
+  },
+  {
+    "num": 31,
+    "name": "自転車専用",
+    "description": "自転車道や自転車専用道路であることを示しており、普通自転車以外の車と歩行者は通行できない",
+    "imageSrc": "./規制標識一覧 - 禁止行為を伝えるための標識_files/jisensha-jyou.gif"
+  },
+  {
+    "num": 32,
+    "name": "自転車及び歩行者専用",
+    "description": "自転車と歩行者以外は通行できない",
+    "imageSrc": "./規制標識一覧 - 禁止行為を伝えるための標識_files/jitensha-oyobi.gif"
+  },
+  {
+    "num": 33,
+    "name": "歩行者専用",
+    "description": "歩行者以外は通行できない",
+    "imageSrc": "./規制標識一覧 - 禁止行為を伝えるための標識_files/houkousha.gif"
+  },
+  {
+    "num": 34,
+    "name": "一方通行-A",
+    "description": "車は矢印が示す方向にしか通行できない",
+    "imageSrc": "./規制標識一覧 - 禁止行為を伝えるための標識_files/ippo-tsukou.gif"
+  },
+  {
+    "num": 35,
+    "name": "一方通行-B",
+    "description": "車は矢印が示す方向にしか通行できない",
+    "imageSrc": "./規制標識一覧 - 禁止行為を伝えるための標識_files/ippou-tsuko-1.gif"
+  },
+  {
+    "num": 36,
+    "name": "自転車一方通行-A",
+    "description": "自転車は矢印が示す方向にしか通行できない",
+    "imageSrc": "./規制標識一覧 - 禁止行為を伝えるための標識_files/jitensha-tsukou-ippo.gif"
+  },
+  {
+    "num": 37,
+    "name": "自転車一方通行-A",
+    "description": "自転車は矢印が示す方向にしか通行できない",
+    "imageSrc": "./規制標識一覧 - 禁止行為を伝えるための標識_files/jitensha-ippo.gif"
+  },
+  {
+    "num": 38,
+    "name": "車両通行区分",
+    "description": "車両は標識に表示された通行区分に従って通行しなければならない(左画像の場合は二輪軽車両のみ通行帯を進行可)",
+    "imageSrc": "./規制標識一覧 - 禁止行為を伝えるための標識_files/sharyoutsukoukukan.gif"
+  },
+  {
+    "num": 40,
+    "name": "けん引自動車の高速自動車国道通行区分",
+    "description": "けん引自動車は標識に表示された通行区分に従って通行しなければいけない(左画像の場合は右車線を走行)",
+    "imageSrc": "./規制標識一覧 - 禁止行為を伝えるための標識_files/kenhiki-jidosha-doro.gif"
+  },
+  {
+    "num": 41,
+    "name": "専用通行帯-A",
+    "description": "標識に示された車両専用の通行帯となり、標識に示された車両以外は通行することはできない(左画像の場合はバスのみ通行可能)",
+    "imageSrc": "./規制標識一覧 - 禁止行為を伝えるための標識_files/senyoutsukou.gif"
+  },
+  {
+    "num": 42,
+    "name": "専用通行帯-B",
+    "description": "標識に示された車両専用の通行帯となり、標識に示された車両以外は通行することはできない(左画像の場合は自転車のみ通行可能)",
+    "imageSrc": "./規制標識一覧 - 禁止行為を伝えるための標識_files/senyoutsukou-2.gif"
+  },
+  {
+    "num": 45,
+    "name": "進行方向別通行区分-A",
+    "description": "この標識がある交差点では、進行する方向別に指定された車両通行帯（車線）を通行しなければいけない",
+    "imageSrc": "./規制標識一覧 - 禁止行為を伝えるための標識_files/hyoushiki-10.gif"
+  },
+  {
+    "num": 47,
+    "name": "進行方向別通行区分-C",
+    "description": "この標識がある交差点では、進行する方向別に指定された車両通行帯（車線）を通行しなければいけない",
+    "imageSrc": "./規制標識一覧 - 禁止行為を伝えるための標識_files/hyoushiki5-2.gif"
+  },
+  {
+    "num": 51,
+    "name": "環状の交差点における右回り通行",
+    "description": "この標識の先にある環状の交差点では、右回り通行しなければいけない",
+    "imageSrc": "./規制標識一覧 - 禁止行為を伝えるための標識_files/kanjyou-kousatenari.gif"
+  },
+  {
+    "num": 53,
+    "name": "直角駐車",
+    "description": "この標識がある駐車スペース（時間制限駐車区間を含む）には、道路の側端に対して直角に駐車しなければいけない",
+    "imageSrc": "./規制標識一覧 - 禁止行為を伝えるための標識_files/chokakuchusha.gif"
+  },
+  {
+    "num": 55,
+    "name": "警笛鳴らせ",
+    "description": "この標識がある場所では、車両や路面電車は警音器（クラクション）を鳴らさなければいけない",
+    "imageSrc": "./規制標識一覧 - 禁止行為を伝えるための標識_files/narasei.gif"
+  },
+  {
+    "num": 57,
+    "name": "徐行-B",
+    "description": "この標識より先、車両と路面電車は徐行しなければいけない(徐行とは、すぐに停止が可能な速度)",
+    "imageSrc": "./規制標識一覧 - 禁止行為を伝えるための標識_files/hoko2.gif"
+  },
+  {
+    "num": 58,
+    "name": "一時停止-A",
+    "description": "この標識の先にある停止線では、車両と路面電車は直前で一時停止しなければいけない(停止線がない場合は標識の前で一時停止しなければいけない)",
+    "imageSrc": "./規制標識一覧 - 禁止行為を伝えるための標識_files/ichijiteshi.gif"
+  },
+  {
+    "num": 59,
+    "name": "一時停止-B",
+    "description": "この標識の先にある停止線では、車両と路面電車は直前で一時停止しなければいけない(停止線がない場合は標識の前で一時停止しなければいけない)",
+    "imageSrc": "./規制標識一覧 - 禁止行為を伝えるための標識_files/tomare.gif"
+  },
+  {
+    "num": 61,
+    "name": "歩行者横断禁止",
+    "description": "この標識より先、歩行者は横断できない",
+    "imageSrc": "./規制標識一覧 - 禁止行為を伝えるための標識_files/hokosha-odankinshi.gif"
+  }
+]
