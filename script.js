@@ -270,6 +270,9 @@ function renderFavorites() {
     favorites.forEach(id => {
         const rule = allRules.find(r => r.id === id);
         if (!rule) return;
+        const wrap = document.createElement('span');
+        wrap.className = 'fav-chip-wrap';
+
         const chip = document.createElement('button');
         chip.className = 'fav-chip';
         chip.textContent = rule.title;
@@ -281,11 +284,25 @@ function renderFavorites() {
             renderCurrent();
             window.scrollTo({ top: 0, behavior: 'smooth' });
         };
-        favChips.appendChild(chip);
+        wrap.appendChild(chip);
+
+        // Individual delete button
+        const delBtn = document.createElement('button');
+        delBtn.className = 'fav-chip-del';
+        delBtn.textContent = '✕';
+        delBtn.title = 'お気に入りから削除 (remove favorite)';
+        delBtn.onclick = (e) => {
+            e.stopPropagation();
+            favorites = favorites.filter(f => f !== id);
+            saveFavorites();
+            renderFavorites();
+        };
+        wrap.appendChild(delBtn);
+
+        favChips.appendChild(wrap);
     });
 }
 
-// ---------------------------------------------------------------------
 // Navigation
 // ---------------------------------------------------------------------
 function nextRule() {

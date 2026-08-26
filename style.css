@@ -332,9 +332,55 @@ header p {
     transition: all 0.2s;
 }
 
-.fav-chip:hover {
+.fav-chip-wrap {
+    display: inline-flex;
+    align-items: center;
+    gap: 0;
+    border-radius: 999px;
+    background: #fff8e6;
+    border: 2px solid #f5a623;
+    overflow: hidden;
+}
+
+.fav-chip-wrap .fav-chip {
+    border: none;
+    background: transparent;
+    padding: 7px 8px 7px 14px;
+}
+
+.fav-chip-wrap:hover {
     background: #f5a623;
+}
+
+.fav-chip-wrap:hover .fav-chip {
     color: #fff;
+}
+
+.fav-chip-del {
+    border: none;
+    background: rgba(0,0,0,0.06);
+    color: #b45309;
+    width: 26px;
+    height: 26px;
+    margin: 3px 4px 3px 0;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 0.75rem;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s, color 0.2s;
+}
+
+.fav-chip-wrap:hover .fav-chip-del {
+    background: rgba(255,255,255,0.35);
+    color: #7c2d12;
+}
+
+.fav-chip-del:hover {
+    background: #ef4444 !important;
+    color: #fff !important;
 }
 
 .empty-note {
