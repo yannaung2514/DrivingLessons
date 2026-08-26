@@ -889,6 +889,67 @@ async function init() {
         });
     }
 
+        // Rule photo: right-click / long-press to add or delete
+    const ruleImg = document.getElementById('cardImage');
+    let pressTimer = null;
+    if (ruleImg) {
+        // Right-click on desktop
+        ruleImg.addEventListener('contextmenu', function(e) {
+            e.preventDefault();
+            showRulePhotoMenu(e.clientX, e.clientY);
+        });
+        // Long press on mobile
+        ruleImg.addEventListener('touchstart', function(e) {
+            var x = e.touches[0].clientX;
+            var y = e.touches[0].clientY;
+            pressTimer = setTimeout(function() {
+                showRulePhotoMenu(x, y);
+            }, 600);
+        }, { passive: true });
+        ruleImg.addEventListener('touchend', function() {
+            clearTimeout(pressTimer);
+        }, { passive: true });
+        ruleImg.addEventListener('touchmove', function() {
+            clearTimeout(pressTimer);
+        }, { passive: true });
+    }
+
+    function showRulePhotoMenu(x, y) {
+        var old = document.getElementById('photoContextMenu');
+        if (old) old.remove();
+        var menu = document.createElement('div');
+        menu.id = 'photoContextMenu';
+        menu.style.cssText = 'position:fixed;top:'+y+'px;left:'+x+'px;z-index:9999;background:#fff;border-radius:8px;box-shadow:0 4px 20px rgba(0,0,0,.2);padding:4px;display:flex;flex-direction:column;min-width:160px;';
+        
+        var addBtn = document.createElement('button');
+        addBtn.textContent = '📷 写真を追加';
+        addBtn.style.cssText = 'border:none;background:none;padding:10px 16px;text-align:left;cursor:pointer;font-size:.9rem;color:#333;border-radius:6px;';
+        addBtn.onmouseenter = function(){this.style.background='#f5f5f5';};
+        addBtn.onmouseleave = function(){this.style.background='none';};
+        addBtn.onclick = function() { pickRulePhoto(); menu.remove(); };
+        
+        menu.appendChild(addBtn);
+        
+        var rule = currentRule();
+        if (rule && rulePhotos[rule.id]) {
+            var delBtn = document.createElement('button');
+            delBtn.textContent = '🗑 写真を削除';
+            delBtn.style.cssText = 'border:none;background:none;padding:10px 16px;text-align:left;cursor:pointer;font-size:.9rem;color:#ef4444;border-radius:6px;';
+            delBtn.onmouseenter = function(){this.style.background='#fef2f2';};
+            delBtn.onmouseleave = function(){this.style.background='none';};
+            delBtn.onclick = function() { removeRulePhoto(); menu.remove(); };
+            menu.appendChild(delBtn);
+        }
+        
+        document.body.appendChild(menu);
+        
+        setTimeout(function() {
+            document.addEventListener('click', function close(ev) {
+                if (!menu.contains(ev.target)) { menu.remove(); document.removeEventListener('click', close); }
+            });
+        }, 100);
+    }
+
     // Handle photo chosen inside the add/edit word modal
     const newInp = document.getElementById('wordNewPhotoInput');
     if (newInp) {
