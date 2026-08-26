@@ -261,8 +261,7 @@ function renderCurrent() {
 }
 
 function renderFavorites() {
-    if (!favCount || !favChips) return;
-    favCount.textContent = favorites.length;
+    // Favorites section removed - no-op
     if (favorites.length === 0) {
         favChips.innerHTML = '<span class="empty-note">まだお気に入りがありません。カードの ☆ を押して追加できます。</span>';
         return;
