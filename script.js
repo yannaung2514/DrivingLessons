@@ -1298,6 +1298,7 @@ async function saveWord(event) {
                 alert('単語を更新しました');
                 await loadWords();
                 await uploadPendingNewPhoto(wordId);
+                renderWords();
             } else {
                 alert('更新に失敗しました');
             }
@@ -1309,6 +1310,7 @@ async function saveWord(event) {
                 const newId = success.id;
                 await loadWords();
                 await uploadPendingNewPhoto(newId);
+                renderWords();
             } else {
                 alert('追加に失敗しました');
             }
