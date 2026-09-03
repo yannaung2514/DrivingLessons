@@ -262,6 +262,7 @@ function renderCurrent() {
 
 function renderFavorites() {
     // Favorites section removed - no-op
+    if (!favCount || !favChips) return;
     if (favorites.length === 0) {
         favChips.innerHTML = '<span class="empty-note">まだお気に入りがありません。カードの ☆ を押して追加できます。</span>';
         return;
@@ -913,15 +914,16 @@ async function init() {
     // Handle card study photo upload (photo added from カード tab)
     const cardInp = document.getElementById('cardStudyPhotoInput');
     if (cardInp) {
-        cardInp.addEventListener('change', () => {
+        cardInp.addEventListener('change', async () => {
             const w = allWords[cardOrder[cardIndex]];
             const file = cardInp.files && cardInp.files[0];
             if (!file || !w) return;
             const reader = new FileReader();
-            reader.onload = () => {
-                downscaleImage(reader.result, 900, (dataUrl) => {
-                    wordPhotos[w.id] = dataUrl;
-                    savePhotos();
+            reader.onload = async () => {
+                downscaleImage(reader.result, 900, async (dataUrl) => {
+                    // Use savePhoto so the photo syncs to Supabase Storage
+                    // (consistent with the 言葉 tab upload path).
+                    await savePhoto(w.id, dataUrl);
                     renderCard();
                 });
             };
@@ -1100,10 +1102,11 @@ async function loadWords() {
                     word: w.word,
                     reading: w.reading,
                     myanmar: w.myanmar,
-                    category: w.category
+                    category: w.category,
+                    photo_url: w.photo_url || null
                 }));
                 useDatabase = true;
-                console.log(`✁EUsing ${allWords.length} words from database`);
+                console.log(`Using ${allWords.length} words from database`);
             } else {
                 // Database is empty, seed it with local data
                 console.log('Database empty, seeding with local data...');
@@ -1119,7 +1122,8 @@ async function loadWords() {
                             word: w.word,
                             reading: w.reading,
                             myanmar: w.myanmar,
-                            category: w.category
+                            category: w.category,
+                            photo_url: w.photo_url || null
                         }));
                         useDatabase = true;
                     }
