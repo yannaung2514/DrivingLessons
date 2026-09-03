@@ -84,6 +84,13 @@ function getPhotoUrlFromWordId(wordId) {
  * when the user is on a new browser/device (localStorage is empty).
  */
 async function loadPhotosFromSupabase() {
+    // The Supabase client loads async via a CDN <script> tag. Wait for it
+    // (up to ~5s) so photos load even on slower connections.
+    let attempts = 0;
+    while (!supabaseClient && attempts < 50) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+        attempts++;
+    }
     if (!supabaseClient) return 0;
 
     try {
