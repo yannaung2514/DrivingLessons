@@ -564,10 +564,8 @@ function renderCard() {
         statusEl.classList.remove('has-photo', 'no-photo');
         if (url) {
             statusEl.classList.add('has-photo');
-            statusEl.textContent = '📸 写真あり (photo)';
         } else {
             statusEl.classList.add('no-photo');
-            statusEl.textContent = '🚫 写真なし (no photo)';
         }
     }
 
