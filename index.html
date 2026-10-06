@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>🚦日本の交通ルールを学ぼう - Learn Japan Traffic Rules</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -25,7 +28,7 @@
         <button class="mode-tab active" id="studyTab" onclick="showMode('study')">📖 ルール Rules</button>
         <button class="mode-tab" id="wordTab" onclick="showMode('words')">🔤 言葉 Words</button>
         <button class="mode-tab" id="cardTab" onclick="showMode('cards')">🃏 カード Cards</button>
-        <button class="mode-tab" id="quizTab" onclick="showMode('quiz')">📝 テスト Test</button>
+        <button class="mode-tab" id="examTab" onclick="showMode('exam')">🚦 仮免試験</button>
     </div>
 
     <!-- Flashcard (Study mode) -->
@@ -62,6 +65,36 @@
         <button class="btn" id="nextQuizBtn" style="display:none;" onclick="nextQuizQuestion()">次の問題 ▶</button>
         <button class="btn" id="restartQuizBtn" style="display:none;" onclick="startQuiz()">もう一度やり直す 🔄</button>
     </section>
+
+    <!-- 仮免許学科試験 (Exam mode: Q1 ~ Q4, 50 正/誤 questions each) -->
+    <section id="examSection" style="display:none;">
+        <div class="exam-set-tabs" id="examSetTabs"></div>
+
+        <div class="exam-header">
+            <span id="examTitle" class="exam-title"></span>
+            <div class="exam-header-right">
+                <span id="examAnsweredCount" class="word-count">回答 0 / 50</span>
+                <label class="exam-photo-toggle" id="examPhotoToggle"
+                       title="チェックすると各問題に「画像を追加 / 変更 / 削除」ボタンが表示されます (tick to show the photo add / edit / delete buttons)">
+                    <input type="checkbox" id="examPhotoEditMode" onchange="toggleExamPhotoEditMode(this.checked)"> 📷 画像編集
+                </label>
+            </div>
+        </div>
+
+        <div id="examQuestions" class="exam-questions"></div>
+
+        <!-- Hidden file input: attach a picture (sign / road marking) to an exam question -->
+        <input type="file" id="examPhotoInput" accept="image/*" style="display:none;" title="問題の画像を選ぶ">
+
+        <div class="exam-actions">
+            <button class="btn exam-btn" id="examSubmitBtn" onclick="submitExam()">採点する ✔</button>
+            <button class="btn exam-btn exam-btn-alt" id="examRetryBtn" onclick="resetExamSet()" style="display:none;">もう一度解く 🔄</button>
+        </div>
+
+        <div id="examResult" class="exam-result" style="display:none;"></div>
+        <div id="examMistakes" class="exam-mistakes" style="display:none;"></div>
+    </section>
+
 
     <!-- Words (Vocabulary) section -->
     <section id="wordSection" style="display:none;">
@@ -181,6 +214,7 @@
 <script src="supabase.js"></script>
 <script src="rulesdata.js"></script>
 <script src="trafficwords.js"></script>
+<script src="examdata.js"></script>
 <script src="script.js"></script>
 </body>
 </html>

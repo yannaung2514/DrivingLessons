@@ -275,6 +275,85 @@ async function loadRulePhotosFromSupabase() {
 }
 
 // ============================================================
+// Exam Question Photo Storage (Supabase)
+// ------------------------------------------------------------
+// Pictures used by the 仮免試験 questions (標識 / 道路標示) live in the
+// same 'traffic-photos' bucket, under the 'exam-photos/' folder, named
+// '<setId>-<questionNumber>.jpg'  e.g. exam-photos/R1-9.jpg
+// (R1 set, question 9). Mirrors the rule-photo pipeline above.
+// ============================================================
+
+/**
+ * Upload an exam question photo to Supabase Storage
+ * @param {string} photoId - '<setId>-<questionNumber>' e.g. 'R1-9'
+ * @param {string} dataUrl - Base64 data URL
+ * @returns {Promise<string>} Public URL
+ */
+async function uploadExamPhotoToSupabase(photoId, dataUrl) {
+    if (!supabaseClient) throw new Error('Supabase not initialized');
+    const response = await fetch(dataUrl);
+    const blob = await response.blob();
+    const filePath = `exam-photos/${photoId}.jpg`;
+    const { error } = await supabaseClient.storage
+        .from('traffic-photos')
+        .upload(filePath, blob, { contentType: 'image/jpeg', upsert: true });
+    if (error) throw error;
+    const { data: urlData } = supabaseClient.storage
+        .from('traffic-photos')
+        .getPublicUrl(filePath);
+    return urlData.publicUrl + '?v=' + Date.now();
+}
+
+/**
+ * Delete an exam question photo from Supabase Storage
+ * @param {string} photoId - '<setId>-<questionNumber>'
+ */
+async function deleteExamPhotoFromSupabase(photoId) {
+    if (!supabaseClient || !photoId) return;
+    const filePath = `exam-photos/${photoId}.jpg`;
+    const { error } = await supabaseClient.storage
+        .from('traffic-photos')
+        .remove([filePath]);
+    if (error) console.warn('Failed to delete exam photo:', error);
+}
+
+/**
+ * List all exam question photos in the bucket and rebuild the mapping,
+ * so pictures also show on a new browser/device (localStorage empty).
+ */
+async function loadExamPhotosFromSupabase() {
+    if (!supabaseClient) return 0;
+    try {
+        const { data, error } = await supabaseClient.storage
+            .from('traffic-photos')
+            .list('exam-photos');
+        if (error) throw error;
+
+        let count = 0;
+        (data || []).forEach(file => {
+            if (!file || !file.name || !file.name.toLowerCase().endsWith('.jpg')) return;
+            const photoId = file.name.slice(0, -4);
+            if (!photoId) return;
+            if (examPhotos[photoId] && examPhotos[photoId].startsWith('http')) return;
+            const { data: urlData } = supabaseClient.storage
+                .from('traffic-photos')
+                .getPublicUrl(`exam-photos/${file.name}`);
+            examPhotos[photoId] = urlData.publicUrl + '?v=' + Date.now();
+            count++;
+        });
+
+        if (count > 0) {
+            saveExamPhotos();
+            console.log(`✅ Loaded ${count} exam photo(s) from Supabase Storage`);
+        }
+        return count;
+    } catch (error) {
+        console.warn('Could not list exam photos from Supabase:', error);
+        return 0;
+    }
+}
+
+// ============================================================
 // Database Operations for Vocabulary Words
 // ============================================================
 

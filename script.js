@@ -25,6 +25,48 @@ function loadRulePhotos() {
 function saveRulePhotos() {
     try { localStorage.setItem(RULE_PHOTO_KEY, JSON.stringify(rulePhotos)); } catch (e) { /* ignore */ }
 }
+
+// ---- Exam question photos (pictures inside 仮免試験 questions) ----
+// Keyed by '<setId>-<questionNumber>' e.g. 'R1-9'. Uploaded to Supabase
+// Storage (exam-photos/) with a localStorage fallback, exactly like the
+// rule photos above.
+const EXAM_PHOTO_KEY = 'examQuestionPhotos';
+let examPhotos = {};
+let examPhotoTarget = -1;   // question index the hidden file input is for
+function loadExamPhotos() {
+    try {
+        const raw = localStorage.getItem(EXAM_PHOTO_KEY);
+        examPhotos = raw ? JSON.parse(raw) : {};
+    } catch (e) { examPhotos = {}; }
+    if (!examPhotos || typeof examPhotos !== 'object') examPhotos = {};
+}
+function saveExamPhotos() {
+    try { localStorage.setItem(EXAM_PHOTO_KEY, JSON.stringify(examPhotos)); } catch (e) { /* ignore */ }
+}
+// Stable storage id for one question's picture: '<setId>-<1-based number>'
+function examPhotoId(setId, index) {
+    return setId + '-' + (index + 1);
+}
+function pickExamPhoto(index) {
+    const inp = document.getElementById('examPhotoInput');
+    if (!inp) return;
+    examPhotoTarget = index;
+    inp.value = '';
+    inp.click();
+}
+async function removeExamPhoto(index) {
+    const set = examSets[examSetIndex];
+    if (!set) return;
+    const id = examPhotoId(set.id, index);
+    if (!examPhotos[id]) return;
+    if (!confirm('問' + (index + 1) + ' の画像を削除しますか？')) return;
+    if (window.supabaseConfigured && supabaseClient && String(examPhotos[id]).startsWith('http')) {
+        await deleteExamPhotoFromSupabase(id);
+    }
+    delete examPhotos[id];
+    saveExamPhotos();
+    renderExamQuestions();   // answers are restored from examAnswers by the render
+}
 function currentRule() {
     return allRules[order[currentIndex]];
 }
@@ -82,7 +124,8 @@ const wordSection     = document.getElementById('wordSection');
 const quizSection     = document.getElementById('quizSection');
 const studyTab        = document.getElementById('studyTab');
 const wordTab         = document.getElementById('wordTab');
-const quizTab         = document.getElementById('quizTab');
+const examTab         = document.getElementById('examTab');
+const examSection     = document.getElementById('examSection');
 const wordCount       = document.getElementById('wordCount');
 const wordGrid        = document.getElementById('wordGrid');
 const categoryNote    = document.getElementById('categoryNote');
@@ -354,17 +397,20 @@ function showMode(mode) {
     const isWords = mode === 'words';
     const isQuiz = mode === 'quiz';
     const isCards = mode === 'cards';
+    const isExam = mode === 'exam';
     studySection.style.display = isStudy ? 'block' : 'none';
     wordSection.style.display = isWords ? 'block' : 'none';
     quizSection.style.display = isQuiz ? 'block' : 'none';
     cardSection.style.display = isCards ? 'block' : 'none';
+    examSection.style.display = isExam ? 'block' : 'none';
     studyTab.classList.toggle('active', isStudy);
     wordTab.classList.toggle('active', isWords);
-    quizTab.classList.toggle('active', isQuiz);
     cardTab.classList.toggle('active', isCards);
+    examTab.classList.toggle('active', isExam);
     if (isWords) renderWords();
     if (isQuiz) startQuiz();
     if (isCards) initCards();
+    if (isExam) initExam();
 }
 
 // ---------------------------------------------------------------------
@@ -963,6 +1009,41 @@ async function init() {
         });
     }
 
+    // Handle exam question photo upload (picture + text mixed questions).
+    // Same pipeline as the rule photo: downscale -> Supabase Storage -> localStorage.
+    const examInp = document.getElementById('examPhotoInput');
+    if (examInp) {
+        examInp.addEventListener('change', () => {
+            const file = examInp.files && examInp.files[0];
+            if (!file || examPhotoTarget < 0) return;
+            const index = examPhotoTarget;
+            const reader = new FileReader();
+            reader.onload = () => {
+                downscaleImage(reader.result, 900, async (dataUrl) => {
+                    const set = examSets[examSetIndex];
+                    if (!set) return;
+                    const id = examPhotoId(set.id, index);
+                    if (window.supabaseConfigured && supabaseClient) {
+                        try {
+                            examPhotos[id] = await uploadExamPhotoToSupabase(id, dataUrl);
+                            saveExamPhotos();
+                            console.log('✅ Exam photo uploaded to Supabase:', id);
+                        } catch (e) {
+                            console.warn('Supabase upload failed, saving locally:', e);
+                            examPhotos[id] = dataUrl;
+                            saveExamPhotos();
+                        }
+                    } else {
+                        examPhotos[id] = dataUrl;
+                        saveExamPhotos();
+                    }
+                    renderExamQuestions();
+                });
+            };
+            reader.readAsDataURL(file);
+        });
+    }
+
     // Search box listeners (言葉 & カード tabs)
     const wordSearch = document.getElementById('wordSearchInput');
     const wordSearchClear = document.getElementById('wordSearchClear');
@@ -1347,6 +1428,444 @@ async function saveWord(event) {
 
     closeWordModal();
 }
+// ---------------------------------------------------------------------
+// 仮免許学科試験 (Provisional license written test)
+// 5 sets (Q1 ~ Q4, R1) x 50 正/誤 questions, loaded from examdata.js
+// ---------------------------------------------------------------------
+let examSets = [];            // question sets from examdata.js
+let examSetIndex = 0;         // Q1 is selected by default
+let examAnswers = [];         // user answers for the active set ('正' | '誤' | '')
+let examGraded = false;       // has the active set been submitted?
+let examInitialized = false;
+let examPhotoEditMode = false; // 「📷 画像編集」checkbox: show the photo add/edit/delete buttons
+
+// Called from showMode('exam'); builds the view the first time it is opened.
+function initExam() {
+    if (!examInitialized) {
+        examSets = Array.isArray(window.examQuestionSets) ? window.examQuestionSets : [];
+        examInitialized = true;
+        loadExamPhotos();               // localStorage cache of question pictures
+        syncExamPhotosFromSupabase();   // then refresh from Storage (async)
+    }
+
+    const wrap = document.getElementById('examQuestions');
+    if (!examSets.length) {
+        wrap.innerHTML = '<div class="exam-empty">問題データ（examdata.js）を読み込めませんでした。</div>';
+        return;
+    }
+
+    renderExamSetTabs();
+    loadExamSet(examSetIndex, false);
+}
+
+// Pull question pictures from Supabase Storage and repaint the questions.
+// Runs in the background so opening the exam tab is never blocked.
+async function syncExamPhotosFromSupabase() {
+    if (!window.supabaseConfigured || typeof loadExamPhotosFromSupabase !== 'function') return;
+
+    // The Supabase client loads async via a CDN <script> tag; wait briefly.
+    let attempts = 0;
+    while (!supabaseClient && attempts < 50) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+        attempts++;
+    }
+    if (!supabaseClient) return;
+
+    const count = await loadExamPhotosFromSupabase();
+    // Repaint only while the learner is on the exam tab and the set is not
+    // graded yet (repainting after grading would drop the result).
+    if (count > 0 && !examGraded) {
+        const section = document.getElementById('examSection');
+        if (section && section.style.display !== 'none') renderExamQuestions();
+    }
+}
+
+// Q1 / Q2 / Q3 / Q4 buttons at the top of the exam view.
+function renderExamSetTabs() {
+    const wrap = document.getElementById('examSetTabs');
+    wrap.innerHTML = '';
+    examSets.forEach((set, i) => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'exam-set-tab' + (i === examSetIndex ? ' active' : '');
+        btn.textContent = set.id;
+        btn.onclick = () => loadExamSet(i, true);
+        wrap.appendChild(btn);
+    });
+}
+
+// Switch to a question set, reset its answers and render the 50 questions.
+function loadExamSet(index, scrollUp) {
+    examSetIndex = index;
+    examAnswers = new Array(examSets[index].questions.length).fill('');
+    examGraded = false;
+
+    renderExamSetTabs();
+    renderExamQuestions();
+    updateExamAnsweredCount();
+
+    document.getElementById('examResult').style.display = 'none';
+    document.getElementById('examResult').innerHTML = '';
+    document.getElementById('examMistakes').style.display = 'none';
+    document.getElementById('examMistakes').innerHTML = '';
+    document.getElementById('examSubmitBtn').style.display = '';
+    document.getElementById('examRetryBtn').style.display = 'none';
+    document.getElementById('examPhotoToggle').style.display = '';   // photo-edit checkbox comes back
+
+    if (scrollUp) window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+// ---------------------------------------------------------------------
+// Question pictures (picture + text mixed)
+// A question can show an illustration from three sources, in priority order:
+//   1. an uploaded photo -> examPhotos['<setId>-<n>'] (Supabase Storage)
+//   2. item.img          -> a static image path or URL in examdata.js
+//   3. item.svg          -> an inline SVG string (rulesdata.js convention)
+// Optional: item.caption (label under the picture) and
+//           item.layout ('left' = beside the text, 'top' = above it).
+// Returns a DOM element, or null when the question has no picture.
+// ---------------------------------------------------------------------
+function buildExamFigure(item, photoId) {
+    const uploaded = photoId ? examPhotos[photoId] : null;
+    const src = uploaded || item.img || '';
+    const markup = !src && item.svg ? String(item.svg) : '';
+    if (!src && !markup) return null;
+
+    const fig = document.createElement('div');
+    fig.className = 'exam-figure ' + (item.layout === 'top' ? 'exam-figure-top' : 'exam-figure-left');
+
+    const media = document.createElement('div');
+    media.className = 'exam-figure-media';
+    if (src) {
+        const img = document.createElement('img');
+        img.src = src;
+        img.alt = item.caption || '';
+        img.loading = 'lazy';
+        media.appendChild(img);
+    } else {
+        media.innerHTML = markup;   // inline SVG from our own data files
+    }
+    fig.appendChild(media);
+
+    if (item.caption) {
+        const cap = document.createElement('div');
+        cap.className = 'exam-figure-caption';
+        cap.textContent = item.caption;
+        fig.appendChild(cap);
+    }
+    return fig;
+}
+
+// ---------------------------------------------------------------------
+// Furigana: the optional `furigana` column in examdata.js carries an
+// annotated copy of `q` with {base|reading} marks, e.g.
+// 'この標識は{止まれ|とまれ}を示す。' Each group becomes
+// <ruby>base<rt>reading</rt></ruby> so the hiragana is printed above the
+// kanji. Built with DOM nodes only, so the text can never inject HTML.
+// ---------------------------------------------------------------------
+function appendRubyText(parent, text) {
+    const re = /\{([^{}|]+)\|([^{}]+)\}/g;
+    let last = 0;
+    let m;
+    while ((m = re.exec(text)) !== null) {
+        if (m.index > last) parent.appendChild(document.createTextNode(text.slice(last, m.index)));
+        const ruby = document.createElement('ruby');
+        ruby.appendChild(document.createTextNode(m[1]));
+        const rt = document.createElement('rt');
+        rt.textContent = m[2];
+        ruby.appendChild(rt);
+        parent.appendChild(ruby);
+        last = re.lastIndex;
+    }
+    if (last < text.length) parent.appendChild(document.createTextNode(text.slice(last)));
+}
+
+// Fill an element with question text, with furigana when the item has it.
+function setRubyText(el, furigana, plain) {
+    el.textContent = '';
+    if (furigana) appendRubyText(el, furigana);
+    else el.textContent = plain;
+}
+
+// Render every question of the active set with 正 / 誤 selection buttons.
+function renderExamQuestions() {
+    const set = examSets[examSetIndex];
+    const wrap = document.getElementById('examQuestions');
+    document.getElementById('examTitle').textContent = set.title;
+    wrap.innerHTML = '';
+
+    set.questions.forEach((item, i) => {
+        const card = document.createElement('div');
+        card.className = 'exam-question';
+        card.dataset.index = String(i);
+
+        const qLine = document.createElement('div');
+        qLine.className = 'exam-question-text';
+
+        const num = document.createElement('span');
+        num.className = 'exam-question-num';
+        num.textContent = '問' + (i + 1);
+        qLine.appendChild(num);
+
+        const statement = document.createElement('span');
+        statement.className = 'exam-question-statement';
+        setRubyText(statement, item.furigana, item.q);
+        qLine.appendChild(statement);
+
+        // Question text + optional picture (picture + text mixed).
+        const photoId = examPhotoId(set.id, i);
+        const figure = buildExamFigure(item, photoId);
+        const body = document.createElement('div');
+        body.className = 'exam-question-body';
+        if (figure && figure.classList.contains('exam-figure-top')) {
+            body.classList.add('is-stack');
+            body.appendChild(figure);
+            body.appendChild(qLine);
+        } else {
+            body.appendChild(qLine);
+            if (figure) body.appendChild(figure);
+        }
+        card.appendChild(body);
+
+        const optRow = document.createElement('div');
+        optRow.className = 'exam-options';
+        ['正', '誤'].forEach(value => {
+            const opt = document.createElement('button');
+            opt.type = 'button';
+            opt.className = 'exam-option';
+            opt.textContent = value;
+            opt.onclick = () => selectExamAnswer(i, value, card, opt);
+            optRow.appendChild(opt);
+        });
+        card.appendChild(optRow);
+
+        const feedback = document.createElement('div');
+        feedback.className = 'exam-feedback';
+        card.appendChild(feedback);
+
+        // Picture controls. Hidden once the set is graded, because a re-render
+        // would otherwise wipe the grading result.
+        if (!examGraded) {
+            const tools = document.createElement('div');
+            tools.className = 'exam-photo-tools';
+            // Photo buttons stay hidden until 「📷 画像編集」is ticked.
+            tools.style.display = examPhotoEditMode ? '' : 'none';
+
+            const upBtn = document.createElement('button');
+            upBtn.type = 'button';
+            upBtn.className = 'exam-photo-btn';
+            upBtn.textContent = figure ? '🖼 画像を変更' : '🖼 画像を追加';
+            upBtn.title = 'この問題の標識・標示の画像をアップロード（Supabase Storage に保存）';
+            upBtn.onclick = () => pickExamPhoto(i);
+            tools.appendChild(upBtn);
+
+            if (examPhotos[photoId]) {
+                const rmBtn = document.createElement('button');
+                rmBtn.type = 'button';
+                rmBtn.className = 'exam-photo-btn exam-photo-remove';
+                rmBtn.textContent = '✕ 画像を削除';
+                rmBtn.onclick = () => removeExamPhoto(i);
+                tools.appendChild(rmBtn);
+            }
+            card.appendChild(tools);
+        }
+
+        // Restore an already-chosen answer, so attaching or removing a picture
+        // (which re-renders the list) never loses the learner's selections.
+        if (examAnswers[i]) {
+            const picked = examAnswers[i];
+            optRow.querySelectorAll('.exam-option').forEach(btn => {
+                const isPicked = btn.textContent === picked;
+                btn.classList.toggle('selected', isPicked);
+                btn.classList.toggle('opt-correct', isPicked && picked === '正');
+                btn.classList.toggle('opt-wrong', isPicked && picked === '誤');
+            });
+            card.classList.add('answered');
+        }
+
+        wrap.appendChild(card);
+    });
+}
+
+// Store one answer and highlight the chosen 正 / 誤 button.
+function selectExamAnswer(index, value, card, opt) {
+    if (examGraded) return;              // locked after submission
+    examAnswers[index] = value;
+
+    const options = card.querySelectorAll('.exam-option');
+    options.forEach(btn => {
+        const picked = btn.textContent === value;
+        btn.classList.toggle('selected', picked);
+        btn.classList.toggle('opt-correct', picked && value === '正');
+        btn.classList.toggle('opt-wrong', picked && value === '誤');
+    });
+    card.classList.add('answered');
+    updateExamAnsweredCount();
+}
+
+// "回答 12 / 50" counter shown next to the set title.
+function updateExamAnsweredCount() {
+    const total = examSets[examSetIndex].questions.length;
+    const done = examAnswers.filter(a => a === '正' || a === '誤').length;
+    document.getElementById('examAnsweredCount').textContent = '回答 ' + done + ' / ' + total;
+}
+
+// 「📷 画像編集」checkbox: show/hide the per-question photo buttons
+// (add / change / delete) without re-rendering, so selected answers and the
+// graded result are never lost by ticking the box.
+function toggleExamPhotoEditMode(on) {
+    examPhotoEditMode = !!on;
+    applyExamPhotoToolsVisibility();
+}
+
+function applyExamPhotoToolsVisibility() {
+    document.querySelectorAll('#examQuestions .exam-photo-tools').forEach(el => {
+        el.style.display = examPhotoEditMode ? '' : 'none';
+    });
+}
+
+
+
+// Grade the active set: mark each question, show the score and the
+// explanations for the questions that were answered incorrectly.
+function submitExam() {
+    if (examGraded) return;
+    const set = examSets[examSetIndex];
+    const questions = set.questions;
+
+    const unanswered = examAnswers.findIndex(a => a !== '正' && a !== '誤');
+    if (unanswered !== -1) {
+        const msg = '未回答の問題が ' + (questions.length - examAnswers.filter(a => a === '正' || a === '誤').length) +
+            ' 問あります。すべて回答してから採点してください。（問' + (unanswered + 1) + ' が未回答）';
+        window.alert(msg);
+        const card = document.querySelector('.exam-question[data-index="' + unanswered + '"]');
+        if (card) {
+            card.classList.add('unanswered-flash');
+            card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+        return;
+    }
+
+    examGraded = true;
+    let correct = 0;
+    const wrongList = [];
+
+    questions.forEach((item, i) => {
+        const card = document.querySelector('.exam-question[data-index="' + i + '"]');
+        if (!card) return;
+        const isCorrect = examAnswers[i] === item.answer;
+        if (isCorrect) correct++;
+        else wrongList.push(i);
+
+        card.classList.add(isCorrect ? 'is-correct' : 'is-wrong');
+        card.classList.remove('answered');
+        card.classList.remove('unanswered-flash');
+
+        // Drop the picture controls: after grading, a repaint would wipe the
+        // result, so pictures can only be edited before submitting.
+        const photoTools = card.querySelector('.exam-photo-tools');
+        if (photoTools) photoTools.remove();
+
+        const feedback = card.querySelector('.exam-feedback');
+        if (feedback) {
+            feedback.innerHTML = '';
+            const badge = document.createElement('span');
+            badge.className = 'exam-badge ' + (isCorrect ? 'badge-correct' : 'badge-wrong');
+            badge.textContent = isCorrect ? '○ 正解' : '× 不正解（正解は「' + item.answer + '」）';
+            feedback.appendChild(badge);
+            feedback.style.display = 'block';
+        }
+    });
+
+    renderExamResult(correct, questions.length);
+    renderExamMistakes(wrongList);
+
+    document.getElementById('examSubmitBtn').style.display = 'none';
+    document.getElementById('examRetryBtn').style.display = '';
+    // No photo editing after grading (the buttons are already removed there).
+    document.getElementById('examPhotoToggle').style.display = 'none';
+
+    document.getElementById('examResult').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// Score box: correct count, percentage and pass / fail.
+function renderExamResult(correct, total) {
+    const passCount = window.EXAM_PASS_COUNT || 45;
+    const passed = correct >= passCount;
+    const percent = Math.round((correct / total) * 100);
+
+    const box = document.getElementById('examResult');
+    box.className = 'exam-result ' + (passed ? 'result-pass' : 'result-fail');
+    box.innerHTML =
+        '<div class="exam-result-title">' + (passed ? '🎉 合格！' : '😢 不合格') + '</div>' +
+        '<div class="exam-result-score">' + correct + ' / ' + total + ' 問正解（' + percent + '%）</div>' +
+        '<div class="exam-result-note">合格ライン：' + passCount + ' 問以上（' + Math.round(passCount / total * 100) +
+        '%）　正解 ' + correct + ' 問 / 不正解 ' + (total - correct) + ' 問</div>';
+    box.style.display = 'block';
+}
+
+// Explanations are shown only for the questions that were answered incorrectly.
+function renderExamMistakes(wrongList) {
+    const box = document.getElementById('examMistakes');
+    if (!wrongList.length) {
+        box.innerHTML = '<div class="exam-mistakes-title">🎯 全問正解です！解説はありません。</div>';
+        box.style.display = 'block';
+        return;
+    }
+
+    const set = examSets[examSetIndex];
+    let html = '<div class="exam-mistakes-title">📖 間違えた問題の解説（' + wrongList.length + ' 問）</div>';
+
+    wrongList.forEach(i => {
+        const item = set.questions[i];
+        html +=
+            '<div class="exam-mistake">' +
+                '<div class="exam-mistake-head">' +
+                    '<span class="exam-question-num">問' + (i + 1) + '</span>' +
+                    '<span class="exam-mistake-answer">あなたの答え：' + examAnswers[i] +
+                    '　→　正解：' + item.answer + '</span>' +
+                '</div>' +
+                '<div class="exam-mistake-figure"></div>' +
+                '<div class="exam-mistake-q"></div>' +
+                '<div class="exam-mistake-explain"><strong>解説：</strong><span class="jp"></span></div>' +
+                '<div class="exam-mistake-myanmar"></div>' +
+            '</div>';
+    });
+
+    box.innerHTML = html;
+    box.style.display = 'block';
+
+    // Fill the text nodes separately so the question text cannot break the HTML.
+    wrongList.forEach((qi, order) => {
+        const item = set.questions[qi];
+        const card = box.querySelectorAll('.exam-mistake')[order];
+        if (!card) return;
+        const qBox = card.querySelector('.exam-mistake-q');
+        if (qBox) setRubyText(qBox, item.furigana, item.q);
+        card.querySelector('.exam-mistake-explain .jp').textContent = item.explanation;
+        card.querySelector('.exam-mistake-myanmar').textContent = item.myanmar;
+
+        // Repeat the question picture in the explanation (built with DOM APIs
+        // so the source URL can never break out of the HTML string above).
+        const figBox = card.querySelector('.exam-mistake-figure');
+        if (figBox) {
+            const figure = buildExamFigure(item, examPhotoId(set.id, qi));
+            if (figure) {
+                figure.className = 'exam-figure exam-figure-top';
+                figBox.appendChild(figure);
+            } else {
+                figBox.remove();
+            }
+        }
+    });
+}
+
+// Clear the answers of the active set and start over.
+function resetExamSet() {
+    loadExamSet(examSetIndex, true);
+}
+
+
+
 
 
 init();

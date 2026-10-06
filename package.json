@@ -3,7 +3,8 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "start": "npx serve ."
+    "start": "npx serve .",
+    "dev": "node local-server.js"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.109.0",
