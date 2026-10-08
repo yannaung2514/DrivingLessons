@@ -1508,6 +1508,14 @@ ruby rt {
     background: #ef8e42;
 }
 
+.exam-btn-export {
+    background: #3b82f6;
+}
+
+.exam-btn-export:hover {
+    background: #2563eb;
+}
+
 /* Score box */
 .exam-result {
     padding: 18px;
@@ -1731,3 +1739,62 @@ ruby rt {
     }
 }
 
+/* =====================================================================
+   PDF Export / Print Styles
+   ===================================================================== */
+@media print {
+    /* Hide non-essential elements */
+    body.printing-exam .mode-tabs,
+    body.printing-exam .search-bar,
+    body.printing-exam .word-toolbar,
+    body.printing-exam .card-study-topbar,
+    body.printing-exam .exam-actions,
+    body.printing-exam .exam-set-tabs,
+    body.printing-exam .exam-header,
+    body.printing-exam .exam-photo-tools,
+    body.printing-exam #examPhotoInput,
+    body.printing-exam .progress-container,
+    body.printing-exam footer {
+        display: none !important;
+    }
+    
+    /* Show only exam section */
+    body.printing-exam #examSection {
+        display: block !important;
+    }
+    
+    /* Remove shadows and borders for cleaner print */
+    body.printing-exam .exam-question {
+        box-shadow: none !important;
+        border: 1px solid #ddd !important;
+        page-break-inside: avoid;
+    }
+    
+    /* Ensure result box is visible */
+    body.printing-exam .exam-result {
+        page-break-after: always;
+    }
+    
+    /* Optimize for PDF */
+    body.printing-exam {
+        font-size: 12pt;
+    }
+    
+    body.printing-exam .exam-question-text {
+        font-size: 11pt;
+    }
+    
+    body.printing-exam .exam-feedback {
+        font-size: 10pt;
+    }
+    
+    /* Hide buttons in questions */
+    body.printing-exam .exam-option {
+        pointer-events: none;
+    }
+    
+    /* Add page margins */
+    @page {
+        margin: 2cm;
+    }
+}

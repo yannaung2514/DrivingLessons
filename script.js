@@ -1510,6 +1510,7 @@ function loadExamSet(index, scrollUp) {
     document.getElementById('examMistakes').innerHTML = '';
     document.getElementById('examSubmitBtn').style.display = '';
     document.getElementById('examRetryBtn').style.display = 'none';
+    document.getElementById('examExportBtn').style.display = 'none';
     document.getElementById('examPhotoToggle').style.display = '';   // photo-edit checkbox comes back
 
     if (scrollUp) window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -1781,6 +1782,7 @@ function submitExam() {
 
     document.getElementById('examSubmitBtn').style.display = 'none';
     document.getElementById('examRetryBtn').style.display = '';
+    document.getElementById('examExportBtn').style.display = '';
     // No photo editing after grading (the buttons are already removed there).
     document.getElementById('examPhotoToggle').style.display = 'none';
 
@@ -1862,6 +1864,25 @@ function renderExamMistakes(wrongList) {
 // Clear the answers of the active set and start over.
 function resetExamSet() {
     loadExamSet(examSetIndex, true);
+}
+
+// Export the current exam result as PDF using browser's print function
+function exportExamPDF() {
+    if (!examGraded) {
+        alert('採点後にPDF出力できます');
+        return;
+    }
+    
+    // Add a print-specific class to body
+    document.body.classList.add('printing-exam');
+    
+    // Trigger browser's print dialog
+    window.print();
+    
+    // Remove the class after print dialog closes
+    setTimeout(() => {
+        document.body.classList.remove('printing-exam');
+    }, 1000);
 }
 
 
